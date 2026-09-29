@@ -244,6 +244,12 @@
         "ip": "",
         "devid": ""
       }
+    },
+    {
+      "id": "web",
+      "name": "HeadPinz.com",
+      "kind": "web page",
+      "rtsp": ""
     }
   ],
   "zones": [

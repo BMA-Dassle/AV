@@ -14,7 +14,9 @@ export type BoxConfig = {
 export type PlanPanel = { id: string; name?: string; x0: number; y0: number; x1: number; y1: number; image?: string; imageBox?: [number, number, number, number]; rotate?: "cw" | "ccw" };
 // landscape "row": on landscape screens the panels sit side by side at equal height (else they stack).
 export type PlanConfig = { panels: PlanPanel[]; tile: [number, number]; landscape?: "row" | "stack" };
-export type SourceConfig = { id: string; name: string; kind: string; encoder: Encoder };
+// A source is an AV-over-IP encoder, or any RTSP stream the receivers pull directly (window type 2), e.g. the
+// web-page streamer in streamer/ (rtsp://<pc>:8554/headpinz). An RTSP source with an empty url is hidden.
+export type SourceConfig = { id: string; name: string; kind: string; encoder?: Encoder; rtsp?: string };
 export type ZoneConfig = { id: string; name: string };
 export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string; nodeId?: string | number; legacyDeviceId?: number };
   // Power control of the display itself (projectors). Optional; TVs without it have no power buttons.

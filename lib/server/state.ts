@@ -100,7 +100,7 @@ export class SiteState {
       zones: this.site.zones,
       tvs,
       boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || this.via !== "shef", preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),
-      otherSources: [...this.others.values()].filter((o) => cfg.mock || o.encoder?.ip).map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
+      otherSources: [...this.others.values()].filter((o) => o.rtsp || (!("rtsp" in o) && (cfg.mock || o.encoder?.ip))).map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
       schedule: this.pendingSchedule.map(({ site: _s, result: _r, ...v }) => v),
       walls: [...this.walls.values()].map((w) => ({ id: w.id, name: w.name, rows: w.rows, mode: w.mode, sourceId: w.sourceId, busy: w.busy, error: w.error })),
     };
@@ -245,6 +245,13 @@ export class SiteState {
   }
 
   // ---- TVs (Pandora HDTV) ----
+  // What to hand Pandora for a source: an encoder, or an RTSP url for stream sources.
+  private sourceSpec(sourceId: string): { encoder: Encoder } | { rtspUrl: string } {
+    const o = this.others.get(sourceId);
+    if (o?.rtsp) return { rtspUrl: o.rtsp };
+    return { encoder: this.encoderFor(sourceId) };
+  }
+  private isStream(sourceId: string) { return Boolean(this.others.get(sourceId)?.rtsp); }
   private encoderFor(sourceId: string): Encoder {
     const src = this.boxes.get(sourceId) || this.others.get(sourceId);
     if (!src) throw new HttpError(`Unknown source ${sourceId}`, 404);
@@ -280,10 +287,10 @@ export class SiteState {
       this.log("tv.off", { tvs: ready.map((t) => t.id) });
       this.emit(); return results;
     }
-    const encoder = this.encoderFor(sourceId);
+    const spec = this.sourceSpec(sourceId);
     if (ready.length) {
       try {
-        await this.pandora.putSource({ ips: ready.map((t) => this.decoderIp(t)), encoder, audio: opts.audio ?? true, vol: opts.vol });
+        await this.pandora.putSource({ ips: ready.map((t) => this.decoderIp(t)), ...spec, audio: opts.audio ?? !this.isStream(sourceId), vol: opts.vol });
         for (const t of ready) { t.sourceId = sourceId; t.lastChange = Date.now(); t.error = null; results.push({ tv: t.id, ok: true }); }
       } catch (e: any) {
         // Pandora answers 502 with per-node results when a group partially fails.
@@ -400,7 +407,7 @@ export class SiteState {
     const tiles = this.wallTiles(w); const ips = this.wallIps(w);
     const geometry = { x: 0, y: 0, width: w.rows[0].length * w.tile[0], height: w.rows.length * w.tile[1] };
     if (sourceId === null) await this.pandora.closeAll({ ips });
-    else await this.pandora.putSource({ ips, encoder: this.encoderFor(sourceId), audio: false, geometry });
+    else await this.pandora.putSource({ ips, ...this.sourceSpec(sourceId), audio: false, geometry });
     for (const t of tiles) { t.sourceId = sourceId; t.lastChange = Date.now(); t.error = null; }
     w.sourceId = sourceId; w.changedAt = Date.now(); w.error = null;
     if (hasStore()) await store.saveTvSources(this.site.site.slug, tiles.map((t) => ({ tvId: t.id, sourceId }))).catch(() => {});
@@ -485,6 +492,7 @@ export class SiteState {
     const byEncoder = new Map<string, string>();
     for (const b of this.boxes.values()) if (b.encoder?.ip) byEncoder.set(`${b.encoder.ip}|${b.encoder.devid}`, b.id);
     for (const o of this.others.values()) if (o.encoder?.ip) byEncoder.set(`${o.encoder.ip}|${o.encoder.devid}`, o.id);
+    const byUrl = new Map<string, string>(); for (const o of this.others.values()) if (o.rtsp) byUrl.set(o.rtsp.replace(/\/$/, ""), o.id);
     const byIp = new Map<string, string>();
     for (const [k, id] of byEncoder) byIp.set(k.split("|")[0], id);
     // One group command to every decoder: getwindowinfo lists the open windows with the encoder's stream url.
@@ -507,7 +515,7 @@ export class SiteState {
       if (!x || !x.ok) { t.error = x?.error || "no reply"; continue; }
       const w = x.reply?.data?.list?.[0];
       const ip = w ? String(w.url || "").split(":")[0] : "";
-      const src = w ? byEncoder.get(`${ip}|${w.devid}`) || byIp.get(ip) || null : null;
+      const src = w ? byUrl.get(String(w.url || "").replace(/\/$/, "")) || byEncoder.get(`${ip}|${w.devid}`) || byIp.get(ip) || null : null;
       t.error = null;
       if (src !== t.sourceId) { t.sourceId = src; t.lastChange = Date.now(); changed.push({ tvId: t.id, sourceId: src }); }
     }

@@ -1,0 +1,16 @@
+{
+  "name": "hp-web-rtsp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Streams a web page (headpinz.com) over RTSP for the AV-over-IP receivers",
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.mjs",
+    "start": "node streamer.mjs"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer-core": "^23.11.1"
+  }
+}

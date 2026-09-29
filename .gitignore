@@ -14,3 +14,7 @@ research/*.pid
 .env.local
 .next/
 next-env.d.ts
+
+# web-to-RTSP streamer: downloaded binaries and packages
+streamer/bin/
+streamer/dist/

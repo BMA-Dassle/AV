@@ -248,6 +248,12 @@
         "ip": "10.43.60.67",
         "devid": "100"
       }
+    },
+    {
+      "id": "web",
+      "name": "HeadPinz.com",
+      "kind": "web page",
+      "rtsp": ""
     }
   ],
   "zones": [
