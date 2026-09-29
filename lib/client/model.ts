@@ -34,11 +34,13 @@ export function halfHourFloor(ms: number) { const d = new Date(ms); d.setMinutes
 export type GuideIndex = { guide: Guide | null; byNum: Map<number, GuideChannel> };
 export const indexGuide = (g: Guide | null): GuideIndex => ({ guide: g, byNum: new Map((g?.channels || []).map((c) => [c.num, c])) });
 
+// Station callsigns from the guide carry broadcast suffixes (WZVN-TV, WINK-DT); staff know them without.
+export const shortCallsign = (cs: string) => String(cs || "").replace(/-(TV|DT|CD|LD|LP)$/i, "");
 export type ChanInfo = { num: number; cs: string; name: string; cat: string; logo?: string | null };
 export function chan(gi: GuideIndex, cat: Catalog, num: number | null): ChanInfo {
   if (num == null) return { num: 0, cs: "—", name: "", cat: "other" };
-  const g = gi.byNum.get(Number(num)); if (g) return { num: g.num, cs: g.callsign, name: g.name, cat: g.cat, logo: g.logo };
-  const c = cat.all.find((c) => c.num === Number(num)); if (c) return { num: c.num, cs: c.callsign, name: c.name, cat: c.cat };
+  const g = gi.byNum.get(Number(num)); if (g) return { num: g.num, cs: shortCallsign(g.callsign), name: g.name, cat: g.cat, logo: g.logo };
+  const c = cat.all.find((c) => c.num === Number(num)); if (c) return { num: c.num, cs: shortCallsign(c.callsign), name: c.name, cat: c.cat };
   return { num, cs: "CH " + num, name: "Channel " + num, cat: "other" };
 }
 export function progAt(gi: GuideIndex, num: number | null, t = Date.now()): Program | null {
@@ -48,7 +50,7 @@ export function progAt(gi: GuideIndex, num: number | null, t = Date.now()): Prog
 export type NowInfo = { title: string; sub: string; start: number | null; end: number | null };
 export function boxNow(gi: GuideIndex, b: Box): NowInfo | null {
   const p = progAt(gi, b.channel);
-  if (p) return { title: p.title, sub: p.subtitle, start: p.start, end: p.end };
+  if (p) return p.filler ? { title: "Nothing scheduled", sub: "", start: p.start, end: p.end } : { title: p.title, sub: p.subtitle, start: p.start, end: p.end };
   if (b.tuned?.title) return { title: b.tuned.title, sub: b.tuned.episodeTitle || "", start: b.tuned.startTime ? b.tuned.startTime * 1000 : null, end: b.tuned.startTime && b.tuned.duration ? (b.tuned.startTime + b.tuned.duration) * 1000 : null };
   return null;
 }
