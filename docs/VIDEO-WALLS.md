@@ -31,23 +31,37 @@ The tile order comes from the controller's variables (`videowall_N_tl_id … br_
 
 **Oddity worth fixing.** The old page shows the six per-screen buttons while the wall is in Full mode, and the one big wall button while it is in Single mode. That is the opposite of what the wall is doing, and a likely reason staff find it confusing.
 
-**Open question: how each screen shows its slice.** Every node has an identical window (`0,0 5760×2160`). The vendor's wall table read through Pandora (`getwall`) is empty on both walls. So either each node was configured with its row and column some other way (for example its web UI), or Allonis sends a vendor command Pandora does not know. Commands probed and not supported: `getvideowall`, `getvwall`, `getsplice`, `getsplicing`, `getwallinfo`, `getwallparam`, `getmatrix`.
+**How it actually works (captured 2026-09-28 23:49, Video Wall 1, from the controller's VOIP925 driver log; wall restored to DTV 2 at 23:51).** The raw log is in `research/hpn/wall-flip-log.txt` in the old scratch folder.
 
-## Step 0 (before any code): capture exactly what Allonis sends
+1. **"Single" (separate screens)** takes about 1 second and **leaves all six screens blank**:
+   - `{"cmd":"deletewall","id":1}` on each node;
+   - then `{"cmd":"newmatrix"}` and `{"chn":0,"cmd":"setvoattr","width":1920,"height":1080,"hz":60}` on each node.
+2. **"Full" (one picture)** rebuilds the wall **one node at a time, about 6 seconds each, 37 seconds in total**. It also **leaves the wall blank**. For each node it sends `deletewall`, `clearwindows`, `closeaudio`, `bindaudio`, `clearwindows`, `closeaudio`, then this:
 
-This takes one flip at a quiet time, about 10 minutes, and decides whether Pandora needs a new command.
+   ```json
+   {"cmd":"newwall","id":1,"rows":2,"cols":3,"row":R,"col":C,"w":1920,"h":1080,"hz":60,
+    "ledw":5760,"ledh":2160,"type":0,"timing":0,"multiaddr":"239.1.1.1","multPort":1100,
+    "allres":[{"row":0,"col":0,"width":1920,"height":1080}, ... six entries]}
+   ```
 
-1. On http://10.40.60.245/dashboard/, open the VOIP925 driver page and turn on **Logging** and **Verbose**.
-2. On the old Naples page, flip Video Wall 1 to Single, then back to Full with a source.
-3. Save the driver log and turn logging off.
+   It finishes with `setprotocol 0`, `setstreamdelay 80000` and `setkeylock 1`.
+3. **Wall source** takes about 0.2 seconds. It sends the same `openwindow` to all six nodes, with **no `wallid`**. Each node crops its own slice because of its `newwall` settings:
 
-The log shows the JSON sent to each node:
+   ```json
+   {"cmd":"openwindow","x":0,"y":0,"width":5760,"height":2160,"type":0,"wintype":0,"protocol":0,"stream":0,
+    "url":"10.40.60.4:9705/channel=0/stream=0","suburl":"10.40.60.4:9705/channel=0/stream=1", ...}
+   ```
 
-- whether Full uses `openwindow` with `wallid` and wall-space coordinates, as Pandora's `/hdtv/source` supports (`ips` + `wallid` + `x,y,width,height`);
-- or a vendor splice command we have not seen;
-- whether Single is six plain full-screen `openwindow`s.
+   No audio is opened on the wall.
 
-If it is the first case, Pandora needs nothing new. If it is a splice command, Pandora needs one typed endpoint or a raw `POST /hdtv/command` payload (it is non-destructive, so the raw route already allows it).
+**Other findings from the capture:**
+
+- **Wall settings persist on each node.** `getwall` sent raw returns `id`, `rows`, `cols`, `row`, `col` and `allres`. This is how the app can tell a node belongs to a wall. Pandora's typed `GET /hdtv/wall/{ip}` shows `walls: []` because it expects an array while the node answers with a single object. Reported to Pandora.
+- **Nothing here needs new Pandora code.** None of these commands is on Pandora's blocked list, so the app can send them through `POST /hdtv/command`. The nodes are independent, so the app can send `newwall` to all six in parallel: about 6 seconds instead of Allonis's 37.
+
+## Step 0: done
+
+The capture above replaced the planned on-site logging session.
 
 ## Feature plan
 
@@ -80,11 +94,20 @@ Add to `config/sites/hpn.json`:
 
 In wall mode, `POST /api/tvs/source` with a tile id returns "Nemos 3 is part of Video Wall 1 (showing one picture). Switch the wall to separate screens first." No silent side effects.
 
-### 4. Pandora calls (assuming Step 0 shows `openwindow` + `wallid`)
+### 4. Pandora calls (all existing endpoints; confirmed by the capture)
 
-- Wall picture: `POST /hdtv/source { ips: [6 decoders], wallid, x: 0, y: 0, width: 5760, height: 2160, encoder }`. Pandora already unicasts this to all six and returns per-node results. A partial failure shows which screen did not switch.
-- Separate screens: one `POST /hdtv/source` per tile with no coordinates, which is full screen at 1920×1080. The six calls are grouped by source to keep it to a few calls.
-- Audio: open it on one tile only (the middle-bottom screen), or leave it off, so six decoders are not playing the same sound. Needs a decision from Eric.
+- **To wall mode:**
+  - `POST /hdtv/command { ips: [6], payload: { cmd: "deletewall" } }`
+  - then, per node in parallel, the `newwall` payload above with that node's `row` and `col`
+  - then the picture: `POST /hdtv/source { ips: [6], encoder, x: 0, y: 0, width: 5760, height: 2160, audio: false }`
+  - about 7 seconds end to end, and the screens are never left blank at the end.
+- **Change the wall's picture:** the same `POST /hdtv/source` with the wall geometry, about 0.2 seconds.
+- **To separate screens:**
+  - `POST /hdtv/command { ips: [6], payload: { cmd: "deletewall", id: 1 } }`
+  - then `newmatrix` and `setvoattr 1920x1080` per node
+  - then **immediately** `POST /hdtv/source` per node, full screen, with each node's remembered source (default: the wall's source), so there is no blank moment.
+- **Detection at startup and reconcile:** raw `getwall` per node. If it returns `rows`/`cols`, the node is in a wall. The window size then says whether a picture is up.
+- **Audio:** Allonis opens none on the wall. Keep that as the default; offer one tile (bottom-middle) as an option if Eric wants sound there.
 
 ### 5. Floor plan and controls
 
@@ -108,9 +131,9 @@ If one tile's decoder fails during a wall change, the wall shows a warning badge
 
 | Step | Size |
 |---|---|
-| 0. Capture Allonis's wall commands (on site, with logging) | 10 min, Eric or a manager at Naples |
+| 0. Capture Allonis's wall commands | done 2026-09-28 |
 | 1–3. Config, state and reconcile detection, API | half a day |
-| 4. Pandora calls (no Pandora change if Step 0 confirms `wallid`) | included above; +half a day in Pandora if a splice command is needed |
+| 4. Pandora calls | no Pandora change needed |
 | 5–6. Floor-plan wall group, mode switch, guide target | half a day |
 | Test at Naples, quiet hour, one wall | 30 min |
 
