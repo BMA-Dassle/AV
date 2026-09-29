@@ -202,7 +202,7 @@
   "otherSources": [
     {
       "id": "music1",
-      "name": "Music 1",
+      "name": "Bowling Music 1",
       "kind": "music",
       "encoder": {
         "ip": "10.40.60.2",
@@ -211,7 +211,7 @@
     },
     {
       "id": "music2",
-      "name": "Music 2",
+      "name": "Bowling Music 2",
       "kind": "music",
       "encoder": {
         "ip": "10.40.60.9",

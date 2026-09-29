@@ -96,7 +96,7 @@ export class SiteState {
       zones: this.site.zones,
       tvs,
       boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || this.via !== "shef", preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),
-      otherSources: [...this.others.values()].map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
+      otherSources: [...this.others.values()].filter((o) => cfg.mock || o.encoder?.ip).map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
       walls: [...this.walls.values()].map((w) => ({ id: w.id, name: w.name, rows: w.rows, mode: w.mode, sourceId: w.sourceId, busy: w.busy, error: w.error })),
     };
   }

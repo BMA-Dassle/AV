@@ -26,6 +26,7 @@ export function GuideGrid({ m, gi, cat, sel, gridStart, onProgram }: Props) {
       </div>
       <div className="small" style={{ marginBottom: 8 }}>{sel.size ? `${sel.size} screen${sel.size > 1 ? "s" : ""} selected on the TVs page: ${label(m, [...sel])}` : "No screens selected. Pick a program, then choose where it goes."}</div>
       <div className="guide card">
+        <div className="gin">
         <div className="gthead">
           <div className="th first">Channel</div>
           <div className="th track">{Array.from({ length: SLOTS }, (_, i) => <span key={i} style={{ left: `${(i / SLOTS) * 100}%` }}>{fmtT(gridStart + i * 30 * 60000)}</span>)}</div>
@@ -58,7 +59,8 @@ export function GuideGrid({ m, gi, cat, sel, gridStart, onProgram }: Props) {
               </div>
             );
           })}
-          <div className="nowline" style={{ left: `calc(160px + (100% - 160px) * ${pct / 100})` }} />
+          <div className="nowline" style={{ left: `calc(var(--chw) + (100% - var(--chw)) * ${pct / 100})` }} />
+        </div>
         </div>
       </div>
       <div className="foot">

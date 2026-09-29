@@ -22,7 +22,7 @@ export default function SelectionBar({ m, gi, cat, sel, onClear, onPick, onPower
             )}
             <button className="btn outline sm clear" onClick={onClear}>Clear</button>
           </div>
-          <div className="eyebrow" style={{ marginTop: 8 }}>Show on them</div>
+          <div className="eyebrow" style={{ marginTop: 8 }}>DirecTV</div>
           <div className="srcs">
             {m.boxes.map((b) => { const c = chan(gi, cat, b.channel), p = boxNow(gi, b), n = tvsOn(m, b.id).length; const isCur = cur.size === 1 && cur.has(b.id);
               return (
@@ -31,7 +31,11 @@ export default function SelectionBar({ m, gi, cat, sel, onClear, onPick, onPower
                   <span className="b">{p ? p.sub || p.title : c.name}</span>
                 </button>
               ); })}
-            {m.other.map((o) => <button key={o.id} className="srcbtn" onClick={() => onPick(o.id)}><span className="a">{o.name}</span><span className="b">{o.kind}</span></button>)}
+          </div>
+          <div className="eyebrow" style={{ marginTop: 8 }}>Music, signage &amp; other</div>
+          <div className="srcs">
+            {m.other.map((o) => { const isCur = cur.size === 1 && cur.has(o.id);
+              return <button key={o.id} className={`srcbtn other ${isCur ? "cur" : ""}`} onClick={() => onPick(o.id)} aria-label={`Show ${o.name} on selected screens`}><span className="a">{o.name}</span><span className="b">{o.kind}</span></button>; })}
             <button className="srcbtn off" onClick={() => onPick(null)}><span className="a">Off</span><span className="b">Blank the screen</span></button>
           </div>
         </>

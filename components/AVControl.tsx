@@ -167,6 +167,7 @@ function App() {
           <GuideGrid m={m} gi={gi} cat={cat} sel={sel} gridStart={gridStart} onProgram={(c, p) => setOpenProg({ c, p })} />
         </section>
       )}
+      {sel.size > 0 && <style>{`main{padding-bottom:calc(58vh + env(safe-area-inset-bottom,0px))!important}`}</style>}
       <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} onPower={(ids, on) => void setPower(ids, on)} />
       {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover}
         onTune={async (num) => { await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { await sendKey(openBoxObj.id, k); }} />}
@@ -179,6 +180,8 @@ function App() {
 
 function Shell({ children, clock, tab, onTab, locs, m, liveDot }: { children: React.ReactNode; clock: string; tab: "tvs" | "guide"; onTab: (t: "tvs" | "guide") => void; locs: LocationInfo[]; m: Model; liveDot: boolean }) {
   const loc = currentLocation();
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => { const q = window.matchMedia("(max-width: 640px)"); const f = () => setNarrow(q.matches); f(); q.addEventListener("change", f); return () => q.removeEventListener("change", f); }, []);
   return (
     <>
       <div className="backdrop" aria-hidden="true" />
@@ -195,7 +198,7 @@ function Shell({ children, clock, tab, onTab, locs, m, liveDot }: { children: Re
           </div>
           {locs.length > 1 ? (
             <select className="loc" aria-label="Location" value={locs.find((l) => l.slug === loc || l.squareLocationIDs.includes(loc))?.slug || m.siteSlug} onChange={(e) => { const u = new URL(window.location.href); u.searchParams.set("location", e.target.value); window.location.href = u.toString(); }}>
-              {locs.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
+              {locs.map((l) => <option key={l.slug} value={l.slug}>{narrow ? l.shortName : l.name}</option>)}
             </select>
           ) : (
             <span className="loc">{m.site || "…"}</span>
