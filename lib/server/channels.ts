@@ -29,9 +29,13 @@ export const CHANNELS: Channel[] = [
   { num: 360, callsign: "FNC", name: "Fox News", cat: "news" },
   { num: 356, callsign: "MSNBC", name: "MSNBC", cat: "news" },
 ];
-// Commercial NFL Sunday Ticket block seen on the boxes and in the TV Media lineup: 9555-9567 (NFLST2..14).
-for (let i = 0; i < 13; i++) CHANNELS.push({ num: 9555 + i, callsign: `NFLST${i + 2}`, name: `Sunday Ticket ${i + 2}`, cat: "package", group: "NFL Sunday Ticket" });
+// NFL Sunday Ticket and the other packages are read from the live guide (their callsigns there are the truth:
+// 9556 is NFLST4, not NFLST3), so they are not listed here.
 
 const byNum = new Map(CHANNELS.map((c) => [c.num, c]));
 export const findChannel = (num: number | string | null | undefined) => (num == null ? null : byNum.get(Number(num)) || null);
+// Starting favorites for a venue that has not picked its own: the locals and the main sports networks.
+export const DEFAULT_FAVORITES = CHANNELS.filter((c) => c.cat === "local" || c.cat === "sports").map((c) => c.num);
 export const favorites = () => CHANNELS.filter((c) => c.cat === "local" || c.cat === "sports");
+// A favorite may be any channel in the lineup; unknown ones get a bare entry and the page names them from the guide.
+export const channelFor = (num: number): Channel => byNum.get(num) || { num, callsign: "", name: "", cat: "sports" };

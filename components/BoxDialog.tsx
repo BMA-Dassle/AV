@@ -1,22 +1,40 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { boxNow, chan, fmtT, groupNames, progAt, tvsOn, type Box, type GuideIndex, type Model } from "@/lib/client/model";
 import type { Catalog } from "@/lib/client/api";
 import type { Channel } from "@/lib/server/channels";
 import Preview from "./Preview";
+import SportsList from "./SportsList";
+import ChannelList, { type Row } from "./ChannelList";
+import { eventMatches, isSundayTicket, matches, sportEvents } from "@/lib/client/sports";
 import { RecoveryPanel, type RecoverFn } from "./Recovery";
 
-const CATS: [string, string][] = [["fav", "Favorites"], ["sports", "Sports"], ["local", "Locals"], ["package", "Sunday Ticket"], ["all", "All"]];
+const CATS: [string, string][] = [["live", "Live sports"], ["fav", "Favorites"], ["sports", "Sports"], ["local", "Locals"], ["st", "Sunday Ticket"], ["all", "All"]];
 const PAD = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClose, onRecover }: { m: Model; gi: GuideIndex; cat: Catalog; box: Box; live: boolean; onTune: (num: number) => void; onKey: (key: string) => void; onClose: () => void; onRecover: RecoverFn }) {
-  const [tab, setTab] = useState("fav");
+export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClose, onRecover, onFav }: { m: Model; gi: GuideIndex; cat: Catalog; box: Box; live: boolean; onTune: (num: number) => void; onKey: (key: string) => void; onClose: () => void; onRecover: RecoverFn; onFav: (num: number, on: boolean) => void }) {
+  const [tab, setTab] = useState(() => { try { return localStorage.getItem("hp-boxtab") || "live"; } catch { return "live"; } });
+  const pickTab = (k: string) => { setTab(k); try { localStorage.setItem("hp-boxtab", k); } catch { /* private mode */ } };
+  const [q, setQ] = useState("");
   const [entry, setEntry] = useState("");
   const [pvLive, setPvLive] = useState(false);
   const feeds = tvsOn(m, box.id); const c = chan(gi, cat, box.channel); const p = boxNow(gi, box);
   const prog = p && p.start && p.end ? Math.min(100, Math.max(0, Math.round((Date.now() - p.start) / (p.end - p.start) * 100))) : 0;
-  const all: Channel[] = cat.all.length ? cat.all : (gi.guide?.channels || []).map((g) => ({ num: g.num, callsign: g.callsign, name: g.name, cat: g.cat as Channel["cat"] }));
-  const list = tab === "fav" ? (cat.favorites.length ? cat.favorites : all.filter((x) => x.cat === "sports" || x.cat === "local")) : tab === "all" ? all : all.filter((x) => x.cat === tab);
+  const favNums = cat.favoriteNums || cat.favorites.map((c) => c.num);
+  const favs = useMemo(() => new Set(favNums), [favNums]);
+  const rowFor = (num: number, fb?: Channel): Row => { const g = gi.byNum.get(num); return { num, callsign: g?.callsign || fb?.callsign || "", name: g?.name || fb?.name || "", ch: g || null }; };
+  const guideCh = gi.guide?.channels || [];
+  const events = useMemo(() => sportEvents(m, gi), [m, gi]);
+  const rows: Row[] = tab === "fav" ? favNums.map((n) => rowFor(n, cat.favorites.find((c) => c.num === n)))
+    : tab === "sports" ? (guideCh.length ? guideCh.filter((c) => c.cat === "sports").map((c) => rowFor(c.num)) : cat.all.filter((c) => c.cat === "sports").map((c) => rowFor(c.num, c)))
+    : tab === "local" ? (guideCh.length ? guideCh.filter((c) => c.cat === "local").map((c) => rowFor(c.num)) : cat.all.filter((c) => c.cat === "local").map((c) => rowFor(c.num, c)))
+    : tab === "st" ? guideCh.filter(isSundayTicket).map((c) => rowFor(c.num))
+    : tab === "all" ? (guideCh.length ? guideCh.map((c) => rowFor(c.num)) : cat.all.map((c) => rowFor(c.num, c))) : [];
+  const now = Date.now();
+  const shown = q ? rows.filter((r) => matches(q, r.callsign, r.name, String(r.num), (r.ch?.programs || []).filter((p) => p.end > now).slice(0, 3).map((p) => [p.title, p.subtitle, ...(p.teams || [])]).flat())) : rows;
+  // game channels (NFLST1-14) all on filler = no games now; the Mix channels always carry a placeholder listing
+  const stGames = rows.filter((r) => /^NFLST\d+/i.test(r.callsign));
+  const stQuiet = tab === "st" && stGames.length > 0 && stGames.every((r) => { const p = r.ch?.programs.find((x) => x.start <= now && x.end > now); return !p || p.filler; });
   const key = (k: string) => { if (k === "bs") setEntry((e) => e.slice(0, -1)); else if (k === "go") { if (entry) { onTune(Number(entry)); setEntry(""); } } else if (entry.length < 4) setEntry((e) => e + k); };
 
   return (
@@ -55,14 +73,21 @@ export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClos
             )}
           </div>
           <div>
-            <div className="chips" style={{ marginBottom: 8 }}>{CATS.map(([k, l]) => <button key={k} className="tog" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>)}</div>
-            <div className="favgrid compact">
-              {list.map((ch) => { const on = m.boxes.find((x) => x.channel === ch.num && x.id !== box.id); const np = progAt(gi, ch.num);
-                return (
-                  <button key={ch.num} className={`fav ${ch.num === box.channel ? "cur" : ""}`} style={{ "--c": on?.color || "" } as React.CSSProperties} onClick={() => onTune(ch.num)} title={np ? `${np.title}${np.subtitle ? " · " + np.subtitle : ""}` : ""}>
-                    <span className="cs">{ch.callsign}</span><span className="n num">{ch.num} · {np ? np.subtitle || np.title : ch.name}</span>{on && <span className="onbox">on {on.name}</span>}
-                  </button>
-                ); })}
+            <div className="chtools">
+              <div className="chips">{CATS.map(([k, l]) => <button key={k} className="tog" aria-pressed={tab === k} onClick={() => pickTab(k)}>{l}</button>)}</div>
+              <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === "live" ? "Search teams or leagues" : "Search channels or shows"} aria-label="Search" />
+            </div>
+            <div className="chscroll">
+              {tab === "live" ? (
+                <SportsList m={m} compact currentNum={box.channel} events={q ? events.filter((e) => eventMatches(q, e)) : events} onPick={(e) => onTune(e.c.num)}
+                  empty={q ? "No games match that search." : "No games in the guide right now. Try Sports or All."} />
+              ) : (
+                <>
+                  {stQuiet && !q && <div className="alert warn" style={{ marginBottom: 8 }}><span className="ico">ⓘ</span><div><b>No Sunday Ticket games on right now.</b> Games are listed on these channels on Sundays.</div></div>}
+                  <ChannelList m={m} gi={gi} rows={shown} favs={favs} onFav={onFav} onTune={onTune} currentNum={box.channel} boxId={box.id}
+                    empty={tab === "fav" && !q ? "No favorites yet. Tap the star on any channel to add it." : tab === "st" && !guideCh.length ? "Waiting for the guide…" : "No channels match."} />
+                </>
+              )}
             </div>
           </div>
           <div>

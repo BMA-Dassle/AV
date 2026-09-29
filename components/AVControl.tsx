@@ -37,7 +37,7 @@ function App() {
 
   const loadGuide = useCallback(async () => {
     const gs = halfHourFloor(Date.now()); setGridStart(gs);
-    try { setGi(indexGuide(await api.guide(gs - 3600000, 7))); } catch (e: any) { toast(<>Guide data unavailable: {e?.message}</>, "error"); }
+    try { setGi(indexGuide(await api.guide(gs - 3600000, 13))); } catch (e: any) { toast(<>Guide data unavailable: {e?.message}</>, "error"); }
   }, [toast]);
 
   // boot: state, catalog, locations, live updates, guide
@@ -99,6 +99,11 @@ function App() {
       toast(<>{b.name} tuned to <b>{chan(gi, cat, num).cs} {num}</b>{affected ? ` · ${affected} screen${affected > 1 ? "s" : ""} changed` : ""}</>, "info");
     } catch (e: any) { toast(<>{b.name}: {e?.message}</>, "error"); }
     try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
+  };
+  // Star / unstar a channel for this venue; the list updates at once and is saved for every tablet.
+  const setFavorite = async (num: number, on: boolean) => {
+    setCat((c) => { const nums = c.favoriteNums || c.favorites.map((x) => x.num); const next = on ? (nums.includes(num) ? nums : [...nums, num]) : nums.filter((n) => n !== num); return { ...c, favoriteNums: next }; });
+    try { setCat(await api.setFavorite(num, on)); } catch (e: any) { toast(<>Could not save favorites: {e?.message}</>, "error"); api.channels().then(setCat).catch(() => {}); }
   };
   const sendKey = async (boxId: string, key: string) => {
     const b = boxById(mRef.current, boxId); if (!b) return;
@@ -163,14 +168,14 @@ function App() {
         </section>
       ) : (
         <section className="page">
-          <div className="ptitle"><h1>What&apos;s On</h1><span className="sub">Tap a program to put it on screens</span></div>
+          <div className="ptitle"><h1>What&apos;s On</h1><span className="sub">Find a game, then put it on screens</span></div>
           <GuideGrid m={m} gi={gi} cat={cat} sel={sel} gridStart={gridStart} onProgram={(c, p) => setOpenProg({ c, p })} />
         </section>
       )}
       {sel.size > 0 && <style>{`main{padding-bottom:calc(58vh + env(safe-area-inset-bottom,0px))!important}`}</style>}
       <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} onPower={(ids, on) => void setPower(ids, on)} />
       {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover}
-        onTune={async (num) => { await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { await sendKey(openBoxObj.id, k); }} />}
+        onFav={(num, on) => void setFavorite(num, on)} onTune={async (num) => { await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { await sendKey(openBoxObj.id, k); }} />}
       {wallPick && (() => { const w = m.walls.find((x) => x.id === wallPick); return w ? <WallDialog m={m} gi={gi} cat={cat} wall={w} onClose={() => setWallPick(null)} onConfirm={(src) => { setWallPick(null); void setWallMode(w.id, "wall", src); }} /> : null; })()}
       {openProg && <ProgramDialog m={m} gi={gi} cat={cat} sel={sel} c={openProg.c} p={openProg.p} onClose={() => setOpenProg(null)} onTuneBox={tuneBox} onSend={applySource}
         onPick={(boxName, title) => { switchTab("tvs"); toast(<>Tap the screens that should show <b>{title}</b>, then pick <b>{boxName}</b> in the bar below.</>, "info"); }} />}
