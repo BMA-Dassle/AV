@@ -148,3 +148,20 @@ Eric asked to map boxes by MAC rather than IP so a DHCP change or a swapped box 
 
 The 8 receiver ids still have to be read once (`getVersion` on 10.43.60.70-77) and paired with the DTV numbers; the IP table in section 9 is the bridge until then.
 
+## 11. Mapping settled (2026-09-28, late)
+
+The Allonis controller's device tables answer everything the scan would have (`http://10.43.60.245/api/getdevices/directv/all` and `/api/getdevices/avoip900/all`):
+
+| DTV | SHEF IP | receiverId | Encoder IP | Encoder node id (devid) |
+|---|---|---|---|---|
+| DTV 1 | 10.43.60.70 | 0323 6087 7164 | 10.43.60.3 | 102 |
+| DTV 2 | 10.43.60.71 | 0323 6087 6760 | 10.43.60.4 | 104 |
+| DTV 3 | 10.43.60.72 | 0323 6086 0277 | 10.43.60.5 | 105 |
+| DTV 4 | 10.43.60.73 | 0323 6086 1275 | 10.43.60.6 | 107 |
+| DTV 5 | 10.43.60.74 | 0323 6086 3032 | 10.43.60.7 | 108 |
+| DTV 6 | 10.43.60.75 | 0323 6086 0145 | 10.43.60.8 | 110 |
+| DTV 7 | 10.43.60.76 | 0323 6047 5852 | 10.43.60.9 | 112 |
+| DTV 8 | 10.43.60.77 | 0323 6087 4336 | 10.43.60.10 | 144 |
+
+Both provisional pairs from section 9 resolved as assigned. All 46 decoder IPs and the other sources' encoders (Bowling Music 1/2, MMS 1/2, Atmosphere = "ChiveTV", Meeting Room) are in `config/sites/hpfm.json`. The registry body for `POST /directv/registry/TXBSQN0FEKQ11` can be generated from that file.
+

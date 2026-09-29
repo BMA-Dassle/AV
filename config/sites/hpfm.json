@@ -12,7 +12,8 @@
     "legacyControllerBase": "http://10.43.60.245",
     "directvSubnets": [
       "10.43.60.0/24"
-    ]
+    ],
+    "notes": "Addresses from the Allonis controller device tables (/api/getdevices/avoip900/all and /directv/all) on 2026-09-28. Atmosphere = the \"ChiveTV\" transmitter. Quirks in the source data: \"Transmitter 107\" (10.43.60.61) shares node id 107 with DTV4, \"Transmitter 24\" (10.43.60.62) shares 24 with ChiveTV, and Terrace 2 / Shuffly 2 report the same serial; left as found."
   },
   "boxes": [
     {
@@ -25,12 +26,11 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.3",
+        "devid": "102"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
-      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
       "receiverId": "0323 6087 7164"
     },
     {
@@ -43,8 +43,8 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.4",
+        "devid": "104"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
@@ -60,8 +60,8 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.5",
+        "devid": "105"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
@@ -77,12 +77,11 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.6",
+        "devid": "107"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
-      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
       "receiverId": "0323 6086 1275"
     },
     {
@@ -95,8 +94,8 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.7",
+        "devid": "108"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
@@ -112,12 +111,11 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.8",
+        "devid": "110"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
-      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
       "receiverId": "0323 6086 0145"
     },
     {
@@ -130,12 +128,11 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.9",
+        "devid": "112"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
-      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
       "receiverId": "0323 6047 5852"
     },
     {
@@ -148,8 +145,8 @@
         "clientAddr": "0"
       },
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.10",
+        "devid": "144"
       },
       "preview": "",
       "model": "DirecTV modelId 89, SHEF 2.5",
@@ -162,8 +159,8 @@
       "name": "Bowling Music 1",
       "kind": "music",
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.11",
+        "devid": "109"
       }
     },
     {
@@ -171,8 +168,8 @@
       "name": "Bowling Music 2",
       "kind": "music",
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.12",
+        "devid": "106"
       }
     },
     {
@@ -180,8 +177,8 @@
       "name": "MMS 1",
       "kind": "signage",
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.13",
+        "devid": "103"
       }
     },
     {
@@ -189,8 +186,8 @@
       "name": "MMS 2",
       "kind": "signage",
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.60",
+        "devid": "27"
       }
     },
     {
@@ -198,8 +195,8 @@
       "name": "Atmosphere",
       "kind": "signage",
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.56",
+        "devid": "24"
       }
     },
     {
@@ -207,8 +204,8 @@
       "name": "Meeting Room PC",
       "kind": "presentation",
       "encoder": {
-        "ip": "",
-        "devid": ""
+        "ip": "10.43.60.67",
+        "devid": "100"
       }
     }
   ],
@@ -265,7 +262,9 @@
         1326
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.14",
+        "nodeId": "62",
+        "legacyDeviceId": 54
       }
     },
     {
@@ -278,7 +277,9 @@
         1414
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.15",
+        "nodeId": "71",
+        "legacyDeviceId": 48
       }
     },
     {
@@ -291,7 +292,9 @@
         1414
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.16",
+        "nodeId": "73",
+        "legacyDeviceId": 33
       }
     },
     {
@@ -304,7 +307,9 @@
         1414
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.17",
+        "nodeId": "70",
+        "legacyDeviceId": 19
       }
     },
     {
@@ -317,7 +322,9 @@
         1414
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.18",
+        "nodeId": "36",
+        "legacyDeviceId": 46
       }
     },
     {
@@ -330,7 +337,9 @@
         1326
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.19",
+        "nodeId": "32",
+        "legacyDeviceId": 17
       }
     },
     {
@@ -343,7 +352,9 @@
         1239
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.20",
+        "nodeId": "31",
+        "legacyDeviceId": 14
       }
     },
     {
@@ -356,7 +367,9 @@
         1239
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.21",
+        "nodeId": "34",
+        "legacyDeviceId": 36
       }
     },
     {
@@ -369,7 +382,9 @@
         1239
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.22",
+        "nodeId": "39",
+        "legacyDeviceId": 26
       }
     },
     {
@@ -382,7 +397,9 @@
         1239
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.23",
+        "nodeId": "30",
+        "legacyDeviceId": 40
       }
     },
     {
@@ -395,7 +412,9 @@
         1239
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.24",
+        "nodeId": "33",
+        "legacyDeviceId": 45
       }
     },
     {
@@ -408,7 +427,9 @@
         1212
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.25",
+        "nodeId": "37",
+        "legacyDeviceId": 47
       }
     },
     {
@@ -421,7 +442,9 @@
         732
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.26",
+        "nodeId": "35",
+        "legacyDeviceId": 30
       }
     },
     {
@@ -434,7 +457,9 @@
         732
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.27",
+        "nodeId": "38",
+        "legacyDeviceId": 50
       }
     },
     {
@@ -447,7 +472,9 @@
         753
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.28",
+        "nodeId": "42",
+        "legacyDeviceId": 15
       }
     },
     {
@@ -460,7 +487,9 @@
         923
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.29",
+        "nodeId": "44",
+        "legacyDeviceId": 39
       }
     },
     {
@@ -473,7 +502,9 @@
         1011
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.30",
+        "nodeId": "48",
+        "legacyDeviceId": 52
       }
     },
     {
@@ -486,7 +517,9 @@
         1101
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.31",
+        "nodeId": "45",
+        "legacyDeviceId": 55
       }
     },
     {
@@ -499,7 +532,9 @@
         1101
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.32",
+        "nodeId": "40",
+        "legacyDeviceId": 53
       }
     },
     {
@@ -512,7 +547,9 @@
         1011
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.33",
+        "nodeId": "43",
+        "legacyDeviceId": 31
       }
     },
     {
@@ -525,7 +562,9 @@
         1621
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.34",
+        "nodeId": "47",
+        "legacyDeviceId": 37
       }
     },
     {
@@ -538,7 +577,9 @@
         1621
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.35",
+        "nodeId": "49",
+        "legacyDeviceId": 28
       }
     },
     {
@@ -551,7 +592,9 @@
         1621
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.36",
+        "nodeId": "46",
+        "legacyDeviceId": 25
       }
     },
     {
@@ -564,7 +607,9 @@
         1621
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.37",
+        "nodeId": "41",
+        "legacyDeviceId": 23
       }
     },
     {
@@ -577,7 +622,9 @@
         317
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.38",
+        "nodeId": "72",
+        "legacyDeviceId": 16
       }
     },
     {
@@ -590,7 +637,9 @@
         421
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.39",
+        "nodeId": "63",
+        "legacyDeviceId": 24
       }
     },
     {
@@ -603,7 +652,9 @@
         525
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.40",
+        "nodeId": "60",
+        "legacyDeviceId": 51
       }
     },
     {
@@ -616,7 +667,9 @@
         893
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.41",
+        "nodeId": "68",
+        "legacyDeviceId": 27
       }
     },
     {
@@ -629,7 +682,9 @@
         85
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.42",
+        "nodeId": "64",
+        "legacyDeviceId": 29
       }
     },
     {
@@ -642,7 +697,9 @@
         129
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.43",
+        "nodeId": "66",
+        "legacyDeviceId": 32
       }
     },
     {
@@ -655,7 +712,9 @@
         129
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.44",
+        "nodeId": "67",
+        "legacyDeviceId": 18
       }
     },
     {
@@ -668,7 +727,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.45",
+        "nodeId": "69",
+        "legacyDeviceId": 42
       }
     },
     {
@@ -681,7 +742,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.46",
+        "nodeId": "65",
+        "legacyDeviceId": 41
       }
     },
     {
@@ -694,7 +757,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.47",
+        "nodeId": "61",
+        "legacyDeviceId": 35
       }
     },
     {
@@ -707,7 +772,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.48",
+        "nodeId": "28",
+        "legacyDeviceId": 43
       }
     },
     {
@@ -720,7 +787,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.49",
+        "nodeId": "22",
+        "legacyDeviceId": 20
       }
     },
     {
@@ -733,7 +802,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.50",
+        "nodeId": "23",
+        "legacyDeviceId": 44
       }
     },
     {
@@ -746,7 +817,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.51",
+        "nodeId": "20",
+        "legacyDeviceId": 34
       }
     },
     {
@@ -759,7 +832,9 @@
         1841
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.52",
+        "nodeId": "21",
+        "legacyDeviceId": 21
       }
     },
     {
@@ -772,7 +847,9 @@
         1931
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.53",
+        "nodeId": "85",
+        "legacyDeviceId": 38
       }
     },
     {
@@ -785,7 +862,9 @@
         1931
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.54",
+        "nodeId": "81",
+        "legacyDeviceId": 49
       }
     },
     {
@@ -798,7 +877,9 @@
         1425
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.64",
+        "nodeId": "51",
+        "legacyDeviceId": 225
       }
     },
     {
@@ -811,7 +892,9 @@
         1425
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.63",
+        "nodeId": "63",
+        "legacyDeviceId": 227
       }
     },
     {
@@ -824,7 +907,9 @@
         1425
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.66",
+        "nodeId": "50",
+        "legacyDeviceId": 228
       }
     },
     {
@@ -837,7 +922,9 @@
         520
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.55",
+        "nodeId": "29",
+        "legacyDeviceId": 22
       }
     },
     {
@@ -850,7 +937,9 @@
         838
       ],
       "decoder": {
-        "ip": ""
+        "ip": "10.43.60.99",
+        "nodeId": "27",
+        "legacyDeviceId": 71
       }
     }
   ]

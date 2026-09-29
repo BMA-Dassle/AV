@@ -1,0 +1,103 @@
+{
+  "subnets": [
+    "10.43.60.0/24"
+  ],
+  "boxes": [
+    {
+      "id": "dtv1",
+      "name": "DTV 1",
+      "receiverId": "0323 6087 7164",
+      "shefIp": "10.43.60.70",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.3",
+        "devid": "102"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv2",
+      "name": "DTV 2",
+      "receiverId": "0323 6087 6760",
+      "shefIp": "10.43.60.71",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.4",
+        "devid": "104"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv3",
+      "name": "DTV 3",
+      "receiverId": "0323 6086 0277",
+      "shefIp": "10.43.60.72",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.5",
+        "devid": "105"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv4",
+      "name": "DTV 4",
+      "receiverId": "0323 6086 1275",
+      "shefIp": "10.43.60.73",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.6",
+        "devid": "107"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv5",
+      "name": "DTV 5",
+      "receiverId": "0323 6086 3032",
+      "shefIp": "10.43.60.74",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.7",
+        "devid": "108"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv6",
+      "name": "DTV 6",
+      "receiverId": "0323 6086 0145",
+      "shefIp": "10.43.60.75",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.8",
+        "devid": "110"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv7",
+      "name": "DTV 7",
+      "receiverId": "0323 6047 5852",
+      "shefIp": "10.43.60.76",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.9",
+        "devid": "112"
+      },
+      "model": "DirecTV modelId 89"
+    },
+    {
+      "id": "dtv8",
+      "name": "DTV 8",
+      "receiverId": "0323 6087 4336",
+      "shefIp": "10.43.60.77",
+      "clientAddr": "0",
+      "encoder": {
+        "ip": "10.43.60.10",
+        "devid": "144"
+      },
+      "model": "DirecTV modelId 89"
+    }
+  ]
+}
