@@ -39,7 +39,8 @@ export function findSite(key?: string | null): SiteConfig | null {
   return sites.find((s) => s.site.slug === k || (s.site.squareLocationIDs || []).some((id) => id.toLowerCase() === k)) || null;
 }
 
-const tokens = (process.env.APP_TOKENS || process.env.APP_TOKEN || "").split(",").map((t) => t.trim()).filter(Boolean);
+// AV_APP_TOKENS (comma-separated); the old APP_TOKENS / APP_TOKEN names still work
+const tokens = (process.env.AV_APP_TOKENS || process.env.APP_TOKENS || process.env.APP_TOKEN || "").split(",").map((t) => t.trim()).filter(Boolean);
 
 export const cfg = {
   mock: process.env.MOCK === "1" || process.env.MOCK === "true",
