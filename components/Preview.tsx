@@ -36,7 +36,8 @@ export default function Preview({ url, name }: { url: string | null; name: strin
       const fail = () => { if (settled || !alive) return; settled = true; clearTimeout(timer); if (attempt < MAX) timer = setTimeout(go, GAP); else { cleanup(); setOn(false); setTag(`Preview · ${name} · not reachable from this device`); } };
       timer = setTimeout(fail, TIMEOUT);
       if (g) {
-        try { await loadScript(`${g.base}/video-stream.js`); } catch { fail(); return; }
+        // Our own copy of the player (public/go2rtc): a module script from the gateway's origin needs CORS, which gateways don't send.
+        try { await loadScript("/go2rtc/video-stream.js"); } catch { fail(); return; }
         if (!alive) return;
         // go2rtc's player takes its options as properties (attributes are ignored), and connects when src is set.
         // MSE only (Pandora has no WebRTC), video only: the encoders advertise AAC but send none, and go2rtc's
