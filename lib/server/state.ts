@@ -40,7 +40,7 @@ export class SiteState {
 
   private shefIp(b: BoxState) { return this.via === "mock" ? `mock:${b.id}` : b.shef?.ip; }
   private locationID() { return this.site.site.squareLocationIDs?.[0] || this.site.site.slug; }
-  private friendly(e: any) { const m = String(e?.message || e); return /aborted|abort/i.test(m) ? "no response (timed out)" : /ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|fetch failed/i.test(m) ? "unreachable" : m; }
+  private friendly(e: any) { const m = String(e?.message || e); return /aborted|abort/i.test(m) ? "no response (timed out)" : /ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|fetch failed/i.test(m) ? "unreachable" : /Pandora 404/.test(m) ? "Pandora has no DirecTV endpoints yet (waiting for the Pandora release)" : /Pandora 401/.test(m) ? "Pandora rejected the token" : m; }
 
   // Direct-from-LAN preview stream for a box: an explicit URL per box, or <gateway>/api/stream.mp4?src=<boxId>
   // when the site has a preview gateway (go2rtc). The page connects to it itself; nothing goes through Pandora.
@@ -131,6 +131,7 @@ export class SiteState {
     const stale = Date.now() - this.lastPoll > cfg.shef.pollMs;
     const jobs: Promise<unknown>[] = [];
     if (stale) jobs.push(this.refreshAllBoxes());
+    else if (this.inflight) jobs.push(this.inflight);   // a refresh started at boot: wait for it so the first read is not empty
     if (!this.timer && Date.now() - this.lastReconcile > cfg.shef.pollMs) jobs.push(this.reconcileTvs());
     await Promise.all(jobs);
   }
