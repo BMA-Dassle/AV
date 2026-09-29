@@ -1,5 +1,7 @@
 // Environment settings and the list of sites (one JSON per location in config/sites).
-import fortMyers from "@/config/sites/fort-myers.json";
+import hpfm from "@/config/sites/hpfm.json";
+import ft from "@/config/sites/ft.json";
+import hpn from "@/config/sites/hpn.json";
 
 export type Encoder = { ip: string; devid: string | number };
 export type BoxConfig = {
@@ -12,11 +14,11 @@ export type SourceConfig = { id: string; name: string; kind: string; encoder: En
 export type ZoneConfig = { id: string; name: string };
 export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string } };
 export type SiteConfig = {
-  site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; guideLineup?: string; timezone?: string; previewGateway?: string; directvSubnets?: string[]; legacyControllerBase?: string };
+  site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; guideLineup?: string; timezone?: string; previewGateway?: string; directvSubnets?: string[]; legacyControllerBase?: string; notes?: string };
   boxes: BoxConfig[]; otherSources: SourceConfig[]; zones: ZoneConfig[]; tvs: TvConfig[];
 };
 
-export const sites: SiteConfig[] = [fortMyers as unknown as SiteConfig];
+export const sites: SiteConfig[] = [hpfm, ft, hpn].map((s) => s as unknown as SiteConfig);
 
 // A site is addressed by its slug ("fort-myers") or any of its Square location ids.
 export function findSite(key?: string | null): SiteConfig | null {

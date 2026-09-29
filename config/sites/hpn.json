@@ -1,0 +1,19 @@
+{
+  "site": {
+    "slug": "hpn",
+    "name": "HeadPinz Naples",
+    "shortName": "HPN",
+    "squareLocationIDs": [
+      "REPLACE_WITH_SQUARE_LOCATION_ID_HPN"
+    ],
+    "guideLineup": "36463D",
+    "timezone": "America/New_York",
+    "previewGateway": "",
+    "directvSubnets": [],
+    "notes": "TODO: Square location id, TV list with zones and plan positions, floor plan image, DirecTV boxes (receiverId), encoders, subnet, guide lineup (Naples may be a different DirecTV market)."
+  },
+  "boxes": [],
+  "otherSources": [],
+  "zones": [],
+  "tvs": []
+}

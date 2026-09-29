@@ -1,0 +1,19 @@
+{
+  "site": {
+    "slug": "ft",
+    "name": "FastTrax Fort Myers",
+    "shortName": "FT",
+    "squareLocationIDs": [
+      "LAB52GY480CJF"
+    ],
+    "guideLineup": "36463D",
+    "timezone": "America/New_York",
+    "previewGateway": "",
+    "directvSubnets": [],
+    "notes": "TODO: TV list with zones and plan positions, DirecTV boxes (receiverId), encoders, subnet. Same building as HPFM; confirm whether it shares the AV matrix and boxes."
+  },
+  "boxes": [],
+  "otherSources": [],
+  "zones": [],
+  "tvs": []
+}

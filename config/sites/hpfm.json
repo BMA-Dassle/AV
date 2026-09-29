@@ -1,11 +1,10 @@
 {
   "site": {
-    "slug": "fort-myers",
-    "name": "Head Pinz Fort Myers",
-    "shortName": "Fort Myers",
+    "slug": "hpfm",
+    "name": "HeadPinz Fort Myers",
+    "shortName": "HPFM",
     "squareLocationIDs": [
-      "TXBSQN0FEKQ11",
-      "LAB52GY480CJF"
+      "TXBSQN0FEKQ11"
     ],
     "guideLineup": "36463D",
     "timezone": "America/New_York",

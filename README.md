@@ -1,6 +1,6 @@
 # HeadPinz AV Control
 
-Bartender-facing TV control for HeadPinz / FastTrax venues. Replaces the Allonis "Head Pinz" TV page. Next.js 15 (App Router, TypeScript): API route handlers plus a React front end in the Team Member Portal style. Production URL: **av.headpinz.com**, one deployment for every store, the store chosen by URL: `https://av.headpinz.com/?location=fort-myers` (a Square location id works too).
+Bartender-facing TV control for HeadPinz / FastTrax venues. Replaces the Allonis "Head Pinz" TV page. Next.js 15 (App Router, TypeScript): API route handlers plus a React front end in the Team Member Portal style. Production URL: **av.headpinz.com**, one deployment for every store, the store chosen by URL: `?location=HPFM` (HeadPinz Fort Myers), `?location=FT` (FastTrax), `?location=HPN` (HeadPinz Naples). A Square location id works in place of the slug. FT and HPN are scaffolds until their TV lists are added to `config/sites/`.
 
 Two screens: **TVs** (the real floor plan, tap screens then pick what they show; tap a box to change its channel with a live preview) and **Guide** (what's on, from TV Media, routed to screens).
 
@@ -9,7 +9,7 @@ Two screens: **TVs** (the real floor plan, tap screens then pick what they show;
 ```bash
 npm install
 copy .env.example .env.local  # set APP_TOKENS, TVMEDIA_API_KEY, PANDORA_TOKEN; keep MOCK=1 until Pandora's DirecTV endpoints are live
-npm run mock                  # http://localhost:3000/?location=fort-myers&token=<APP_TOKENS value>
+npm run mock                  # http://localhost:3000/?location=HPFM&token=<APP_TOKENS value>
 npm run build && npm start    # production build
 ```
 
