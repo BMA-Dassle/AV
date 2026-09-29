@@ -29,6 +29,8 @@ export interface PandoraClient {
   closeAll(p: { ips: string[] }): Promise<any>;
   setVolume(p: { ips: string[]; vol: number }): Promise<any>;
   status(ip: string): Promise<any>;
+  // Raw protocol command to one node or a group; the reply is the node's JSON (group: per-node results)
+  command(ips: string[], payload: Record<string, unknown>): Promise<any>;
   scan(locationID: string, method?: string): Promise<any>;
   devices(locationID: string): Promise<any>;
   // DirecTV boxes through Pandora (spec: docs/PANDORA-DIRECTV-SPEC.md, sections 4, 8, 10)
@@ -52,6 +54,7 @@ export const pandora: PandoraClient = {
   closeAll: ({ ips }) => call("POST", "/hdtv/window/close", { body: base(ips, { all: true }) }),
   setVolume: ({ ips, vol }) => call("POST", "/hdtv/audio/volume", { body: base(ips, { vol }) }),
   status: (ip) => call("GET", `/hdtv/status/${ip}`, { query: { transport: cfg.pandora.transport } }),
+  command: (ips, payload) => call("POST", "/hdtv/command", { body: base(ips, { payload }) }),
   scan: (locationID, method = "auto") => call("POST", "/hdtv/scan", { body: { locationID, method } }),
   devices: (locationID) => call("GET", `/hdtv/devices/${locationID}`),
   directvBoxes: (locationID) => call("GET", `/directv/boxes/${locationID}`),

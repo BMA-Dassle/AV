@@ -350,15 +350,31 @@ export class SiteState {
     for (const o of this.others.values()) if (o.encoder?.ip) byEncoder.set(`${o.encoder.ip}|${o.encoder.devid}`, o.id);
     const byIp = new Map<string, string>();
     for (const [k, id] of byEncoder) byIp.set(k.split("|")[0], id);
-    await Promise.all([...this.tvs.values()].filter((t) => t.decoder?.ip).map(async (t) => {
-      try {
-        const st = await this.pandora.status(t.decoder.ip);
-        const w = st?.data?.windows?.[0];
-        if (!w) { t.sourceId = null; return; }
-        const ip = String(w.url || "").split(":")[0];
-        t.sourceId = byEncoder.get(`${ip}|${w.devid}`) || byIp.get(ip) || null;
-      } catch { /* leave as is; the decoder may be off */ }
-    }));
+    // One group command to every decoder: getwindowinfo lists the open windows with the encoder's stream url.
+    // (GET /hdtv/status is not usable: it sends encoder-only getters to decoders and fails on the refusal.)
+    const decoders = [...this.tvs.values()].filter((t) => t.decoder?.ip);
+    if (!decoders.length) return;
+    let results: any[] = [];
+    try {
+      const r = await this.pandora.command(decoders.map((t) => t.decoder.ip), { cmd: "getwindowinfo" });
+      results = r?.data?.results || (r?.data ? [{ ip: decoders[0].decoder.ip, ok: true, reply: r.data }] : []);
+    } catch (e: any) {
+      // a group call answers 502 with per-node results when some decoders are off; use what came back
+      results = e?.body?.error?.results || [];
+      if (!results.length) { console.warn("reconcile failed:", e?.message); return; }
+    }
+    const byDecoder = new Map(results.map((x: any) => [x.ip, x]));
+    const changed: { tvId: string; sourceId: string | null }[] = [];
+    for (const t of decoders) {
+      const x = byDecoder.get(t.decoder.ip);
+      if (!x || !x.ok) { t.error = x?.error || "no reply"; continue; }
+      const w = x.reply?.data?.list?.[0];
+      const ip = w ? String(w.url || "").split(":")[0] : "";
+      const src = w ? byEncoder.get(`${ip}|${w.devid}`) || byIp.get(ip) || null : null;
+      t.error = null;
+      if (src !== t.sourceId) { t.sourceId = src; t.lastChange = Date.now(); changed.push({ tvId: t.id, sourceId: src }); }
+    }
+    if (hasStore() && changed.length) await store.saveTvSources(this.site.site.slug, changed).catch((e) => console.warn("store save failed:", e?.message));
     this.emit();
   }
 

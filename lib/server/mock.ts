@@ -69,6 +69,7 @@ export function makeMockPandora(): PandoraClient {
     async putSource() { await delay(150); return { success: true, data: { window: { cmd: "openwindow", code: 0 }, audio: { cmd: "openaudio", code: 0 } } }; },
     async closeAll() { await delay(100); return { success: true, data: { cmd: "closewindow", code: 0 } }; },
     async setVolume() { await delay(50); return { success: true, data: { cmd: "setvol", code: 0 } }; },
+    async command(p: { ips: string[] }) { return { success: true, data: { results: p.ips.map((ip) => ({ ip, ok: true, reply: { cmd: "getwindowinfo", code: 0, data: { list: [] } } })) } }; },
     async status() { await delay(50); return { success: true, data: { id: 1, input: { width: 1920, height: 1080, fps: 60, status: 1 }, windows: [], audio: { url: "", vol: 60, status: 1, mute: 0, id: 0 }, ops: { cpu: "12%" } } }; },
     async scan() { await delay(1500); return { success: true, data: { method: "multicast", count: 0, devices: [], scannedAt: new Date().toISOString() } }; },
     async devices() { return { success: true, data: { method: "none", count: 0, devices: [] } }; },
