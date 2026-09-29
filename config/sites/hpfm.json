@@ -730,6 +730,13 @@
         "ip": "10.43.60.45",
         "nodeId": "69",
         "legacyDeviceId": 42
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.100",
+        "port": 23,
+        "legacyDeviceId": 64
       }
     },
     {
@@ -745,6 +752,13 @@
         "ip": "10.43.60.46",
         "nodeId": "65",
         "legacyDeviceId": 41
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.101",
+        "port": 23,
+        "legacyDeviceId": 65
       }
     },
     {
@@ -760,6 +774,13 @@
         "ip": "10.43.60.47",
         "nodeId": "61",
         "legacyDeviceId": 35
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.102",
+        "port": 23,
+        "legacyDeviceId": 66
       }
     },
     {
@@ -775,6 +796,13 @@
         "ip": "10.43.60.48",
         "nodeId": "28",
         "legacyDeviceId": 43
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.103",
+        "port": 23,
+        "legacyDeviceId": 67
       }
     },
     {
@@ -790,6 +818,13 @@
         "ip": "10.43.60.49",
         "nodeId": "22",
         "legacyDeviceId": 20
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.104",
+        "port": 23,
+        "legacyDeviceId": 68
       }
     },
     {
@@ -805,6 +840,13 @@
         "ip": "10.43.60.50",
         "nodeId": "23",
         "legacyDeviceId": 44
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.105",
+        "port": 23,
+        "legacyDeviceId": 69
       }
     },
     {
@@ -925,6 +967,13 @@
         "ip": "10.43.60.55",
         "nodeId": "29",
         "legacyDeviceId": 22
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.43.60.106",
+        "port": 23,
+        "legacyDeviceId": 70
       }
     },
     {

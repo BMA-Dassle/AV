@@ -6,16 +6,18 @@ import { findChannel } from "./channels";
 import { makeMockPandora, makeMockShef, SEED_TVS } from "./mock";
 import { pandora as realPandora, type PandoraClient } from "./pandora";
 import { shef as realShef, type ShefClient, type Tuned } from "./shef";
+import { projector } from "./projector";
+import { hasStore, store } from "./store";
 
 export type TunedView = { channel: number; minor: number | null; callsign: string; channelName: string; title: string; episodeTitle: string; startTime: number | null; duration: number | null; isRecording: boolean; at: number; pending?: boolean };
 export type BoxView = { id: string; name: string; color: string; receiverId: string | null; online: boolean | null; error: string | null; offlineSince: number | null; tuned: TunedView | null; tvCount: number; configured: boolean; preview: string | null; powerControl: boolean };
-export type TvView = { id: string; name: string; zone: string; map?: [number, number]; sourceId: string | null; lastChange: number | null; error: string | null; configured: boolean };
+export type TvView = { id: string; name: string; zone: string; map?: [number, number]; sourceId: string | null; lastChange: number | null; error: string | null; configured: boolean; display: { kind: string; power: boolean | null } | null };
 export type Snapshot = {
   site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; timezone: string; mock: boolean; time: number };
   zones: { id: string; name: string }[]; tvs: TvView[]; boxes: BoxView[]; otherSources: { id: string; name: string; kind: string; tvCount: number }[];
 };
 
-type TvState = TvConfig & { sourceId: string | null; lastChange: number | null; error: string | null };
+type TvState = TvConfig & { sourceId: string | null; lastChange: number | null; error: string | null; power: boolean | null };
 type BoxState = BoxConfig & { tuned: TunedView | null; online: boolean | null; error: string | null; offlineSince: number | null };
 
 export class SiteState {
@@ -30,13 +32,37 @@ export class SiteState {
 
   constructor(readonly site: SiteConfig) {
     this.events.setMaxListeners(200);
-    this.tvs = new Map(site.tvs.map((t) => [t.id, { ...t, sourceId: cfg.mock ? SEED_TVS[t.id] ?? null : null, lastChange: null, error: null }]));
+    this.tvs = new Map(site.tvs.map((t) => [t.id, { ...t, sourceId: cfg.mock ? SEED_TVS[t.id] ?? null : null, lastChange: null, error: null, power: t.display ? (cfg.mock ? true : null) : null }]));
     this.boxes = new Map(site.boxes.map((b) => [b.id, { ...b, tuned: null, online: null, error: null, offlineSince: null }]));
     this.others = new Map(site.otherSources.map((s) => [s.id, s]));
     this.pandora = cfg.mock ? makeMockPandora() : realPandora;
     this.via = cfg.directvVia;
     this.shef = this.via === "mock" ? makeMockShef(site.boxes) : realShef;
   }
+
+  // ---- Shared store (Neon) ----
+  private lastHydrate = 0;
+  private hydrating: Promise<void> | null = null;
+  // Pull the shared TV -> source / power map and box status written by other instances. Cheap (two selects).
+  async hydrate(force = false) {
+    if (!hasStore()) return;
+    if (!force && Date.now() - this.lastHydrate < 2000) return;
+    if (this.hydrating) return this.hydrating;
+    this.hydrating = (async () => {
+      try {
+        const [tvRows, boxRows] = await Promise.all([store.loadTvs(this.site.site.slug), store.loadBoxes(this.site.site.slug)]);
+        for (const r of tvRows) { const t = this.tvs.get(r.tv_id); if (!t) continue; const at = Date.parse(r.changed_at); if (!t.lastChange || at >= t.lastChange) { t.sourceId = r.source_id ?? null; if (r.power != null) t.power = r.power; t.lastChange = at; } }
+        for (const r of boxRows) { const b = this.boxes.get(r.box_id); if (!b) continue; const at = Date.parse(r.updated_at); if (!b.tuned || at > (b.tuned.at || 0)) { b.online = r.online; b.error = r.error; b.offlineSince = r.offline_since ? Date.parse(r.offline_since) : null; if (r.tuned) b.tuned = r.tuned as TunedView; } }
+        this.lastHydrate = Date.now();
+      } catch (e: any) { console.warn("store hydrate failed:", e?.message); }
+    })().finally(() => { this.hydrating = null; });
+    return this.hydrating;
+  }
+  private persistBoxes() {
+    if (!hasStore()) return;
+    store.saveBoxes(this.site.site.slug, [...this.boxes.values()].map((b) => ({ boxId: b.id, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned }))).catch((e) => console.warn("store saveBoxes failed:", e?.message));
+  }
+  private log(action: string, detail: unknown) { if (hasStore()) void store.log(this.site.site.slug, action, detail); }
 
   private shefIp(b: BoxState) { return this.via === "mock" ? `mock:${b.id}` : b.shef?.ip; }
   private locationID() { return this.site.site.squareLocationIDs?.[0] || this.site.site.slug; }
@@ -52,7 +78,7 @@ export class SiteState {
   }
 
   snapshot(): Snapshot {
-    const tvs = [...this.tvs.values()].map((t) => ({ id: t.id, name: t.name, zone: t.zone, map: t.map, sourceId: t.sourceId, lastChange: t.lastChange, error: t.error, configured: Boolean(t.decoder?.ip) || cfg.mock }));
+    const tvs = [...this.tvs.values()].map((t) => ({ id: t.id, name: t.name, zone: t.zone, map: t.map, sourceId: t.sourceId, lastChange: t.lastChange, error: t.error, configured: Boolean(t.decoder?.ip) || cfg.mock, display: t.display ? { kind: t.display.kind, power: t.power } : null }));
     const counts: Record<string, number> = {};
     for (const t of tvs) if (t.sourceId) counts[t.sourceId] = (counts[t.sourceId] || 0) + 1;
     const s = this.site.site;
@@ -80,7 +106,18 @@ export class SiteState {
   private markOffline(box: BoxState, e: any) { if (box.online !== false) box.offlineSince = Date.now(); box.online = false; box.error = this.friendly(e); }
 
   // Pandora keeps the cached tuned state of every box for a location; one call refreshes all of them.
+  // Until the registry store exists on the Pandora side, that call fails and the app reads each box by ip
+  // (the addresses come from the site file), which is one call per box through Pandora.
+  private registryUsable = true;
+  private async refreshViaPandoraByIp() {
+    await Promise.all([...this.boxes.values()].map(async (box) => {
+      if (!box.shef?.ip) { box.online = null; box.error = "no address configured"; return; }
+      try { const r = await this.pandora.directvTuned(box.shef.ip, box.shef.clientAddr || "0"); this.applyTuned(box, (r?.data ?? r) as Tuned); }
+      catch (e: any) { this.markOffline(box, e); }
+    }));
+  }
   private async refreshViaPandora() {
+    if (!this.registryUsable) return this.refreshViaPandoraByIp();
     try {
       const r = await this.pandora.directvBoxes(this.locationID());
       const rows: any[] = r?.data?.boxes || [];
@@ -92,8 +129,16 @@ export class SiteState {
         this.applyTuned(box, row.tuned as Tuned);
       }
     } catch (e: any) {
+      const st = e?.status;
+      if (st === 400 || st === 404 || st === 500) { this.registryUsable = false; setTimeout(() => { this.registryUsable = true; }, 10 * 60000); return this.refreshViaPandoraByIp(); }
       for (const box of this.boxes.values()) { box.online = null; box.error = `Pandora: ${this.friendly(e)}`; }
     }
+  }
+  private pandoraTune(box: BoxState, major: number) {
+    return box.shef?.ip ? this.pandora.directvTuneIp(box.shef.ip, major, box.shef.clientAddr || "0") : this.pandora.directvTune(this.locationID(), box.id, major);
+  }
+  private pandoraKey(box: BoxState, key: string) {
+    return box.shef?.ip ? this.pandora.directvKeyIp(box.shef.ip, key, box.shef.clientAddr || "0") : this.pandora.directvKey(this.locationID(), box.id, key);
   }
 
   private async refreshBox(box: BoxState) {
@@ -104,11 +149,11 @@ export class SiteState {
     } catch (e: any) { this.markOffline(box, e); }
   }
   private async refreshOne(box: BoxState) {
-    if (this.via === "pandora") { this.lastPoll = 0; await this.refreshAllBoxes(); return; }
+    if (this.via === "pandora") { if (!this.registryUsable && box.shef?.ip) { try { const r = await this.pandora.directvTuned(box.shef.ip, box.shef.clientAddr || "0"); this.applyTuned(box, (r?.data ?? r) as Tuned); } catch (e) { this.markOffline(box, e); } this.persistBoxes(); this.emit(); return; } this.lastPoll = 0; await this.refreshAllBoxes(); return; }
     await this.refreshBox(box); this.emit();
   }
   private async sendKeyRaw(box: BoxState, key: string) {
-    if (this.via === "pandora") { await this.pandora.directvKey(this.locationID(), box.id, key); return; }
+    if (this.via === "pandora") { await this.pandoraKey(box, key); return; }
     const ip = this.shefIp(box);
     if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
     await this.shef.processKey(ip, key, "keyPress", box.shef?.clientAddr || "0");
@@ -121,13 +166,14 @@ export class SiteState {
     if (this.inflight) return this.inflight;
     this.lastPoll = Date.now();
     const work = this.via === "pandora" ? this.refreshViaPandora() : Promise.all([...this.boxes.values()].map((b) => this.refreshBox(b))).then(() => undefined);
-    this.inflight = work.then(() => { this.emit(); }).finally(() => { this.inflight = null; });
+    this.inflight = work.then(() => { this.persistBoxes(); this.emit(); }).finally(() => { this.inflight = null; });
     return this.inflight;
   }
   // Refresh on demand only when the last read is older than the poll interval. On a serverless host there is no
   // timer and each instance holds its own copy, so it also re-reads the decoders on the same cadence: every instance
   // converges on the hardware truth within one interval of any change made through another instance.
   async ensureFresh() {
+    await this.hydrate();
     const stale = Date.now() - this.lastPoll > cfg.shef.pollMs;
     const jobs: Promise<unknown>[] = [];
     if (stale) jobs.push(this.refreshAllBoxes());
@@ -141,7 +187,7 @@ export class SiteState {
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
     const major = Number(channel);
     if (!Number.isInteger(major) || major < 1 || major > 9999) throw new HttpError("Channel must be 1-9999", 400);
-    if (this.via === "pandora") await this.pandora.directvTune(this.locationID(), box.id, major);
+    if (this.via === "pandora") await this.pandoraTune(box, major);
     else {
       const ip = this.shefIp(box);
       if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
@@ -151,6 +197,7 @@ export class SiteState {
     box.tuned = { ...(box.tuned || { minor: null, title: "", episodeTitle: "", startTime: null, duration: null, isRecording: false, at: 0 }), channel: major, callsign: ch?.callsign || "", channelName: ch?.name || `Channel ${major}`, title: "", pending: true, at: Date.now() };
     this.emit();
     setTimeout(() => this.refreshOne(box), 1500);
+    this.log("box.tune", { box: box.id, channel: major });
     return { box: box.id, channel: major, affectedTvs: [...this.tvs.values()].filter((t) => t.sourceId === boxId).map((t) => t.name) };
   }
 
@@ -159,6 +206,7 @@ export class SiteState {
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
     await this.sendKeyRaw(box, key);
     setTimeout(() => this.refreshOne(box), 1200);
+    this.log("box.key", { box: box.id, key });
     return { box: box.id, key };
   }
 
@@ -181,6 +229,8 @@ export class SiteState {
     if (sourceId === null) {
       if (ready.length) await this.pandora.closeAll({ ips: ready.map((t) => this.decoderIp(t)) });
       for (const t of ready) { t.sourceId = null; t.lastChange = Date.now(); t.error = null; results.push({ tv: t.id, ok: true }); }
+      if (hasStore()) await store.saveTvSources(this.site.site.slug, ready.map((t) => ({ tvId: t.id, sourceId: null }))).catch((e) => console.warn("store save failed:", e?.message));
+      this.log("tv.off", { tvs: ready.map((t) => t.id) });
       this.emit(); return results;
     }
     const encoder = this.encoderFor(sourceId);
@@ -199,6 +249,9 @@ export class SiteState {
         }
       }
     }
+    const okIds = results.filter((r) => r.ok).map((r) => r.tv);
+    if (hasStore() && okIds.length) await store.saveTvSources(this.site.site.slug, okIds.map((id) => ({ tvId: id, sourceId }))).catch((e) => console.warn("store save failed:", e?.message));
+    this.log("tv.source", { tvs: okIds, sourceId, failed: results.filter((r) => !r.ok) });
     this.emit(); return results;
   }
 
@@ -246,7 +299,29 @@ export class SiteState {
       if (!to) throw new HttpError("No healthy box to move the screens to", 409);
     }
     const results = await this.setTvSource(ids, to.id);
+    this.log("box.move", { from: fromBoxId, to: to.id, tvs: ids });
     return { moved: results, to: to.id, toName: to.name, sameChannel: Boolean(from.tuned?.channel && to.tuned?.channel === from.tuned.channel) };
+  }
+
+  // ---- Display power (projectors) ----
+  async setTvPower(tvIds: string[], on: boolean) {
+    const targets = tvIds.map((id) => this.tvs.get(id)).filter((t): t is TvState => Boolean(t && t.display));
+    if (!targets.length) throw new HttpError("None of those screens has power control", 400);
+    const results = await Promise.all(targets.map(async (t) => {
+      const d = t.display!;
+      try {
+        if (cfg.projectorVia === "mock") await new Promise((r) => setTimeout(r, 300));
+        else if (cfg.projectorVia === "direct") await projector.power(d, on);
+        else await this.pandora.projectorPower(this.locationID(), d.ip, on, d.protocol, d.port);
+        t.power = on; t.error = null;
+        return { tv: t.id, ok: true };
+      } catch (e: any) { t.error = this.friendly(e); return { tv: t.id, ok: false, error: t.error }; }
+    }));
+    const okIds = results.filter((r) => r.ok).map((r) => r.tv);
+    if (hasStore() && okIds.length) await store.saveTvPower(this.site.site.slug, okIds.map((id) => ({ tvId: id, power: on }))).catch((e) => console.warn("store save failed:", e?.message));
+    this.log("tv.power", { tvs: okIds, on });
+    this.emit();
+    return results;
   }
 
   async tvStatus(tvId: string) {
@@ -287,7 +362,7 @@ export class SiteState {
     this.emit();
   }
 
-  start() { if (this.timer) return; void this.refreshAllBoxes(); void this.reconcileTvs(); this.timer = setInterval(() => this.refreshAllBoxes(), cfg.shef.pollMs); this.timer.unref?.(); }
+  start() { if (this.timer) return; void this.hydrate(true).then(() => this.refreshAllBoxes()); void this.reconcileTvs(); this.timer = setInterval(() => this.refreshAllBoxes(), cfg.shef.pollMs); this.timer.unref?.(); }
 }
 
 // Module-level singleton so API routes share state within a process (Next dev/prod server, or a warm serverless instance).

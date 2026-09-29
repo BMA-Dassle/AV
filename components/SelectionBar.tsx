@@ -2,16 +2,24 @@
 import { boxNow, chan, label, tvById, tvsOn, type Model, type GuideIndex } from "@/lib/client/model";
 import type { Catalog } from "@/lib/client/api";
 
-export default function SelectionBar({ m, gi, cat, sel, onClear, onPick }: { m: Model; gi: GuideIndex; cat: Catalog; sel: Set<string>; onClear: () => void; onPick: (src: string | null) => void }) {
+export default function SelectionBar({ m, gi, cat, sel, onClear, onPick, onPower }: { m: Model; gi: GuideIndex; cat: Catalog; sel: Set<string>; onClear: () => void; onPick: (src: string | null) => void; onPower: (ids: string[], on: boolean) => void }) {
   const ids = [...sel];
   const open = ids.length > 0;
   const cur = new Set(ids.map((id) => tvById(m, id)?.src));
+  const projectors = ids.filter((id) => tvById(m, id)?.display?.kind === "projector");
   return (
     <div className={`bar ${open ? "open" : ""}`} aria-live="polite">
       {open && (
         <>
           <div className="row">
             <div className="who">{ids.length} screen{ids.length > 1 ? "s" : ""} selected<small>{label(m, ids)}</small></div>
+            {projectors.length > 0 && (
+              <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                <span className="small">{projectors.length} projector{projectors.length > 1 ? "s" : ""}:</span>
+                <button className="btn outline sm" onClick={() => onPower(projectors, true)}>Power on</button>
+                <button className="btn outline sm" onClick={() => onPower(projectors, false)}>Power off</button>
+              </span>
+            )}
             <button className="btn outline sm clear" onClick={onClear}>Clear</button>
           </div>
           <div className="eyebrow" style={{ marginTop: 8 }}>Show on them</div>

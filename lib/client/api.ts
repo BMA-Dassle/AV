@@ -54,6 +54,7 @@ export const api = {
   setSource: (tvIds: string[], sourceId: string | null) => postJson<{ success: boolean; results: { tv: string; ok: boolean; error?: string | null }[] }>("/api/tvs/source", { tvIds, sourceId }),
   tune: (boxId: string, channel: number) => postJson<{ affectedTvs: string[] }>(`/api/boxes/${boxId}/tune`, { channel }),
   key: (boxId: string, key: string) => postJson<unknown>(`/api/boxes/${boxId}/key`, { key }),
+  power: (tvIds: string[], on: boolean) => postJson<{ success: boolean; results: { tv: string; ok: boolean; error?: string | null }[] }>("/api/tvs/power", { tvIds, on }),
   recover: (boxId: string, action: "retry" | "wake" | "cycle" | "move", toBoxId?: string) => postJson<{ success: boolean; online?: boolean | null; error?: string | null; to?: string; toName?: string; sameChannel?: boolean; moved?: { tv: string; ok: boolean }[]; simulated?: boolean }>(`/api/boxes/${boxId}/recover`, { action, toBoxId }),
   eventsUrl: () => apiUrl("/api/events", TOKEN ? { token: TOKEN } : {}),
 };

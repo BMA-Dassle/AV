@@ -4,7 +4,7 @@ import type { Guide, GuideChannel, Program } from "@/lib/server/guide";
 import type { Catalog } from "./api";
 
 export type Box = { id: string; name: string; color: string; channel: number | null; tuned: TunedView | null; online: boolean | null; error: string | null; offlineSince: number | null; pending: boolean; preview: string | null; powerControl: boolean };
-export type Tv = { id: string; name: string; zone: string; src: string | null; x: number; y: number; error: string | null };
+export type Tv = { id: string; name: string; zone: string; src: string | null; x: number; y: number; error: string | null; display: { kind: string; power: boolean | null } | null };
 export type Other = { id: string; name: string; kind: string };
 export type Zone = { id: string; name: string };
 export type Model = { site: string; siteSlug: string; zones: Zone[]; tvs: Tv[]; boxes: Box[]; other: Other[]; time: number };
@@ -12,7 +12,7 @@ export type Model = { site: string; siteSlug: string; zones: Zone[]; tvs: Tv[]; 
 export function toModel(snap: Snapshot): Model {
   return {
     site: snap.site.shortName, siteSlug: snap.site.slug, time: snap.site.time, zones: snap.zones,
-    tvs: snap.tvs.map((t) => ({ id: t.id, name: t.name, zone: t.zone, src: t.sourceId, x: t.map?.[0] ?? 0, y: t.map?.[1] ?? 0, error: t.error })),
+    tvs: snap.tvs.map((t) => ({ id: t.id, name: t.name, zone: t.zone, src: t.sourceId, x: t.map?.[0] ?? 0, y: t.map?.[1] ?? 0, error: t.error, display: t.display ?? null })),
     boxes: snap.boxes.map((b) => ({ id: b.id, name: b.name, color: b.color, channel: b.tuned?.channel ?? null, tuned: b.tuned, online: b.online, error: b.error, offlineSince: b.offlineSince ?? null, pending: Boolean(b.tuned?.pending), preview: b.preview, powerControl: Boolean(b.powerControl) })),
     other: snap.otherSources.map((o) => ({ id: o.id, name: o.name, kind: o.kind ? o.kind[0].toUpperCase() + o.kind.slice(1) : "" })),
   };

@@ -96,6 +96,15 @@ function App() {
     const b = boxById(mRef.current, boxId); if (!b) return;
     try { await api.key(boxId, key); } catch (e: any) { toast(<>{b.name}: {e?.message}</>, "error"); }
   };
+  const setPower = async (ids: string[], on: boolean) => {
+    try {
+      const r = await api.power(ids, on);
+      const failed = (r.results || []).filter((x) => !x.ok);
+      if (failed.length) toast(<>{failed.map((f) => mRef.current.tvs.find((t) => t.id === f.tv)?.name || f.tv).join(", ")} did not respond: {failed[0].error || "error"}</>, "error");
+      else toast(<>{ids.length} projector{ids.length > 1 ? "s" : ""} {on ? "powering on (about 10 s to a picture)" : "powering off"}.</>, "info");
+    } catch (e: any) { toast(<>Power: {e?.message}</>, "error"); }
+    try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
+  };
   const onBoxCard = (id: string) => { if (sel.size) void applySource([...sel], id); else { setHl(id); setOpenBox(id); } };
   const recover = async (boxId: string, action: "retry" | "wake" | "cycle" | "move", toBoxId?: string) => {
     const b = boxById(mRef.current, boxId); if (!b) return;
@@ -132,7 +141,7 @@ function App() {
           <GuideGrid m={m} gi={gi} cat={cat} sel={sel} gridStart={gridStart} onProgram={(c, p) => setOpenProg({ c, p })} />
         </section>
       )}
-      <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} />
+      <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} onPower={(ids, on) => void setPower(ids, on)} />
       {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover}
         onTune={async (num) => { setOpenBox(null); setHl(null); await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { setOpenBox(null); setHl(null); await sendKey(openBoxObj.id, k); }} />}
       {openProg && <ProgramDialog m={m} gi={gi} cat={cat} sel={sel} c={openProg.c} p={openProg.p} onClose={() => setOpenProg(null)} onTuneBox={tuneBox} onSend={applySource}

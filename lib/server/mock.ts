@@ -76,5 +76,10 @@ export function makeMockPandora(): PandoraClient {
     async directvTune() { return { success: true, data: {} }; },
     async directvKey() { return { success: true, data: {} }; },
     async directvDiscover() { return { success: true, data: { receivers: [] } }; },
+    async directvTuned() { return { success: true, data: { major: 206, minor: 65535, callsign: "ESPN", title: "SportsCenter" } }; },
+    async directvTuneIp() { return { success: true, data: {} }; },
+    async directvKeyIp() { return { success: true, data: {} }; },
+    async projectorPower() { await delay(300); return { success: true, data: { reply: "P" } }; },
+    async projectorStatus() { return { success: true, data: { on: true } }; },
   };
 }

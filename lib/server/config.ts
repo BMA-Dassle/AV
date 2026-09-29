@@ -12,7 +12,9 @@ export type BoxConfig = {
 };
 export type SourceConfig = { id: string; name: string; kind: string; encoder: Encoder };
 export type ZoneConfig = { id: string; name: string };
-export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string } };
+export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string; nodeId?: string | number; legacyDeviceId?: number };
+  // Power control of the display itself (projectors). Optional; TVs without it have no power buttons.
+  display?: { kind: "projector" | "tv"; protocol?: "optoma" | "pjlink"; ip: string; port?: number; legacyDeviceId?: number } };
 export type SiteConfig = {
   site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; guideLineup?: string; timezone?: string; previewGateway?: string; directvSubnets?: string[]; legacyControllerBase?: string; notes?: string };
   boxes: BoxConfig[]; otherSources: SourceConfig[]; zones: ZoneConfig[]; tvs: TvConfig[];
@@ -35,6 +37,8 @@ export const cfg = {
   //   pandora  through Pandora /v2/directv/* (the only option from a cloud host; needs the Pandora DirecTV release)
   //   shef     straight to the boxes on port 8080 (an on-site host only)
   //   mock     simulated boxes (lets the matrix run live while Pandora's DirecTV endpoints are not deployed yet)
+  // Projector power: pandora (cloud host) | direct (on-site host, TCP to the projector) | mock
+  projectorVia: (process.env.PROJECTOR_VIA || (process.env.MOCK === "1" || process.env.MOCK === "true" ? "mock" : "pandora")) as "pandora" | "direct" | "mock",
   directvVia: (process.env.DIRECTV_VIA || (process.env.MOCK === "1" || process.env.MOCK === "true" ? "mock" : "pandora")) as "pandora" | "shef" | "mock",
   auth: { tokens, required: tokens.length > 0 },
   pandora: {

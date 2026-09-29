@@ -36,6 +36,7 @@ export default function FloorMap(props: Props) {
         <rect className="b" width={TW} height={TH} />
         <text className="cs" x={TW - 7} y={Math.round(TH * 0.42)}>{isBusy ? "…" : cs}</text>
         <text className="nm" x={7} y={TH - 9}>{short ? shortName(t.name) : t.name}</text>
+        {t.display?.kind === "projector" && t.display.power === false && <text x={TW - 7} y={TH - 9} textAnchor="end" style={{ fontSize: 11, fill: "#f87171", fontWeight: 700 }}>PWR OFF</text>}
         <g className="chk" transform="translate(5,5)"><circle r={9} cx={9} cy={9} fill="#3b82f6" /><path d="M4.5 9.5l3 3L13.5 6.5" stroke="#fff" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /></g>
       </g>
     );
