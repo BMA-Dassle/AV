@@ -11,7 +11,7 @@ export default function Preview({ url, name }: { url: string | null; name: strin
 
   useEffect(() => {
     setOn(false);
-    if (!url) { setTag(`Preview · ${name}`); return; }
+    if (!url) { setTag("No preview gateway configured"); return; }
     let alive = true; let attempt = 0; let timer: ReturnType<typeof setTimeout> | undefined; let el: HTMLVideoElement | HTMLImageElement | null = null;
     const isImg = /mjpeg|\.jpe?g|snapshot/i.test(url);
     const cleanup = () => { clearTimeout(timer); if (el) { try { if (el instanceof HTMLVideoElement) { el.pause(); el.removeAttribute("src"); el.load(); } else el.src = ""; } catch { /* ignore */ } el.remove(); el = null; } };
@@ -32,7 +32,7 @@ export default function Preview({ url, name }: { url: string | null; name: strin
   return (
     <>
       <div className={`pv ${on ? "on" : ""}`} ref={host} />
-      <span className="live"><i />LIVE</span><span className="tag">{tag}</span>
+      {on && <span className="live"><i />LIVE</span>}<span className="tag">{tag}</span>
     </>
   );
 }

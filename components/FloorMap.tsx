@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { chan, srcColor, srcName, type Model, type Tv, type GuideIndex } from "@/lib/client/model";
-import { MAPW, MAPH, ZONE_LABELS, codeName, layoutMode, resolveOverlaps, shortName, zoneBox, type LayoutMode } from "@/lib/client/floor";
+import { MAPW, MAPH, ZONE_LABELS, codeName, layoutMode, resolveOverlaps, shortName, zoneBox, type LayoutMode, type Placed } from "@/lib/client/floor";
 import type { Catalog } from "@/lib/client/api";
 
 const FLOOR = "/brand/floorplan.png";
@@ -24,6 +24,13 @@ export default function FloorMap(props: Props) {
   useEffect(() => { if (mode !== "phone" && props.zoneZoom) props.onZone(null); }, [mode, props]);
 
   const { m, gi, cat, sel, hl, busy, zoneZoom } = props;
+  // Zone labels sit just above each zone's cluster of tiles, so tiles never cover them.
+  const zoneLabels = (items: Placed[], TH: number) => m.zones.map((z) => {
+    const its = items.filter((i) => i.t.zone === z.id); if (!its.length) return null;
+    const x = its.reduce((s, i) => s + i.cx, 0) / its.length; const y = Math.min(...its.map((i) => i.cy)) - TH / 2 - 12;
+    return <text key={z.id} className="zl" x={x} y={y} textAnchor="middle">{z.name}</text>;
+  });
+  const csSize = (cs: string, TW: number) => (cs.length <= 4 ? 21 : cs.length <= 6 ? 17 : cs.length <= 8 ? 14 : 12) * (TW / 104);
   const tile = (t: Tv, cx: number, cy: number, TW: number, TH: number, short: boolean) => {
     const b = m.boxes.find((x) => x.id === t.src);
     const cs = b ? (b.channel ? chan(gi, cat, b.channel).cs : b.name) : t.src ? srcName(m, t.src).replace(/ \d+$/, "") : "Off";
@@ -34,7 +41,7 @@ export default function FloorMap(props: Props) {
         tabIndex={0} role="button" aria-pressed={isSel} aria-label={t.name}
         onClick={() => props.onToggle(t.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); props.onToggle(t.id); } }}>
         <rect className="b" width={TW} height={TH} />
-        <text className="cs" x={TW - 7} y={Math.round(TH * 0.42)}>{isBusy ? "…" : cs}</text>
+        <text className="cs" x={TW - 7} y={Math.round(TH * 0.42)} style={{ fontSize: csSize(cs, TW) }}>{isBusy ? "…" : cs}</text>
         <text className="nm" x={7} y={TH - 9}>{short ? shortName(t.name) : t.name}</text>
         {t.display?.kind === "projector" && t.display.power === false && <text x={TW - 7} y={TH - 9} textAnchor="end" style={{ fontSize: 11, fill: "#f87171", fontWeight: 700 }}>PWR OFF</text>}
         <g className="chk" transform="translate(5,5)"><circle r={9} cx={9} cy={9} fill="#3b82f6" /><path d="M4.5 9.5l3 3L13.5 6.5" stroke="#fff" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /></g>
@@ -45,12 +52,12 @@ export default function FloorMap(props: Props) {
   if (mode === "landscape") {
     // Rotate the plan 90° counter-clockwise: VIP on the left, lanes on the right. Tiles stay upright.
     const P = (x: number, y: number): [number, number] => [y, MAPW - x]; const TW = 104, TH = 62;
-    const items = resolveOverlaps(m.tvs.map((t) => { const [cx, cy] = P(t.x + 65, t.y + 35); return { t, cx, cy }; }), TW, TH, 6);
+    const items = resolveOverlaps(m.tvs.map((t) => { const [cx, cy] = P(t.x + 65, t.y + 35); return { t, cx, cy }; }), TW, TH, 14);
     return (
       <div className="mapwrap"><div className="map card">
         <svg viewBox={`0 0 ${MAPH} ${MAPW}`} preserveAspectRatio="xMidYMid meet" role="group" aria-label="Floor map">
           <image href={FLOOR} x={0} y={0} width={MAPW} height={MAPH} preserveAspectRatio="none" transform={`matrix(0 -1 1 0 0 ${MAPW})`} />
-          {ZONE_LABELS.map(([x, y, l]) => { const [px, py] = P(x + 64, y + 18); return <text key={l} className="zl" x={px} y={py} textAnchor="middle">{l}</text>; })}
+          {zoneLabels(items, TH)}
           {items.map((i) => tile(i.t, i.cx, i.cy, TW, TH, true))}
         </svg>
       </div></div>
@@ -61,7 +68,7 @@ export default function FloorMap(props: Props) {
       <div className="mapwrap"><div className="map card">
         <svg viewBox={`0 0 ${MAPW} ${MAPH}`} preserveAspectRatio="xMidYMid meet" role="group" aria-label="Floor map">
           <image href={FLOOR} x={0} y={0} width={MAPW} height={MAPH} preserveAspectRatio="none" />
-          {ZONE_LABELS.map(([x, y, l]) => <text key={l} className="zl" x={x + 64} y={y + 18} textAnchor="middle">{l}</text>)}
+          {zoneLabels(m.tvs.map((t) => ({ t, cx: t.x + 65, cy: t.y + 35 })), 70)}
           {m.tvs.map((t) => tile(t, t.x + 65, t.y + 35, 130, 70, false))}
         </svg>
       </div></div>

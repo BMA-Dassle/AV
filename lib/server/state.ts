@@ -72,7 +72,7 @@ export class SiteState {
   // when the site has a preview gateway (go2rtc). The page connects to it itself; nothing goes through Pandora.
   private previewUrl(b: BoxState): string | null {
     if (b.preview) return b.preview;
-    const gw = this.site.site.previewGateway;
+    const gw = process.env.PREVIEW_GATEWAY || this.site.site.previewGateway;   // env override for a local gateway test
     if (gw && !/REPLACE_WITH/.test(gw)) return `${gw.replace(/\/$/, "")}/api/stream.mp4?src=${encodeURIComponent(b.id)}`;
     return null;
   }

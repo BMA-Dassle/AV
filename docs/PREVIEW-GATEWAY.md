@@ -27,7 +27,9 @@ streams:
   dtv8: rtsp://10.43.60.ENC8:8554/ch0/2
 ```
 
-Encoder IPs come from Pandora `POST /hdtv/scan` (the same list that gives the encoder `devid`s for the box registry). Use the `/ch0/2` preview stream so eight open dialogs do not pull eight full-rate feeds.
+The ready-made file with Fort Myers' real encoder addresses is `docs/go2rtc.yaml` (DTV 1-8 at 10.43.60.3-10, plus the music, signage and meeting-room encoders). Use the `/ch0/2` preview stream so eight open dialogs do not pull eight full-rate feeds.
+
+**Install on Windows (the Allonis controller PC):** download `go2rtc_win64.zip` from the go2rtc releases page, unzip to `C:\go2rtc`, copy `docs/go2rtc.yaml` next to the exe as `go2rtc.yaml`, run `go2rtc.exe` once and confirm `http://localhost:1984` shows the streams, then keep it running as a service (`nssm install go2rtc C:\go2rtc\go2rtc.exe` or a Scheduled Task at logon). Then set `PREVIEW_GATEWAY=http://10.43.60.245:1984` (or `site.previewGateway`). Until it runs, the dialog shows "No preview gateway configured".
 
 ## App configuration
 
