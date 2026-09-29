@@ -51,7 +51,8 @@ export const cfg = {
   // Projector power: pandora (cloud host) | direct (on-site host, TCP to the projector) | mock
   projectorVia: (process.env.PROJECTOR_VIA || (process.env.MOCK === "1" || process.env.MOCK === "true" ? "mock" : "pandora")) as "pandora" | "direct" | "mock",
   directvVia: (process.env.DIRECTV_VIA || (process.env.MOCK === "1" || process.env.MOCK === "true" ? "mock" : "pandora")) as "pandora" | "shef" | "mock",
-  auth: { tokens, required: tokens.length > 0 },
+  // Fail closed: without AV_APP_TOKENS every request is refused (only mock/dev runs open).
+  auth: { tokens, required: tokens.length > 0 || !(process.env.MOCK === "1" || process.env.MOCK === "true") },
   pandora: {
     baseUrl: process.env.PANDORA_BASE || "https://bma-pandora-api.azurewebsites.net/v2",
     token: process.env.PANDORA_TOKEN || "",
