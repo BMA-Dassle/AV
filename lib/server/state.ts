@@ -73,7 +73,8 @@ export class SiteState {
   private previewUrl(b: BoxState): string | null {
     if (b.preview) return b.preview;
     const gw = process.env.PREVIEW_GATEWAY || this.site.site.previewGateway;   // env override for a local gateway test
-    if (gw && !/REPLACE_WITH/.test(gw)) return `${gw.replace(/\/$/, "")}/api/stream.mp4?src=${encodeURIComponent(b.id)}`;
+    // Streams are addressed by the encoder's IP (Pandora's gateway maps it to rtsp://<ip>:8554/ch0/2; docs/go2rtc.yaml uses the same names).
+    if (gw && !/REPLACE_WITH/.test(gw) && b.encoder?.ip) return `${gw.replace(/\/$/, "")}/api/ws?src=${encodeURIComponent(b.encoder.ip)}`;
     return null;
   }
 

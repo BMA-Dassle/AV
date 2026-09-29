@@ -1,21 +1,34 @@
-# go2rtc configuration for HeadPinz Fort Myers box previews. Run on a PC on the AV network (the Allonis controller
-# at 10.43.60.245 is a good host). Then set site.previewGateway in config/sites/hpfm.json (or PREVIEW_GATEWAY) to http://<that pc ip>:1984
-# Streams use each encoder's low-rate preview output (/ch0/2). Docs: docs/PREVIEW-GATEWAY.md
+# go2rtc streams for local testing, named by encoder IP (the same names Pandora's /v2/preview gateway uses).
+# Run: go2rtc.exe -config go2rtc.yaml, then PREVIEW_GATEWAY=http://localhost:1984
 api:
   listen: ":1984"
   origin: "*"
 streams:
-  dtv1: rtsp://10.43.60.3:8554/ch0/2   # DTV 1
-  dtv2: rtsp://10.43.60.4:8554/ch0/2   # DTV 2
-  dtv3: rtsp://10.43.60.5:8554/ch0/2   # DTV 3
-  dtv4: rtsp://10.43.60.6:8554/ch0/2   # DTV 4
-  dtv5: rtsp://10.43.60.7:8554/ch0/2   # DTV 5
-  dtv6: rtsp://10.43.60.8:8554/ch0/2   # DTV 6
-  dtv7: rtsp://10.43.60.9:8554/ch0/2   # DTV 7
-  dtv8: rtsp://10.43.60.10:8554/ch0/2   # DTV 8
-  music1: rtsp://10.43.60.11:8554/ch0/2   # Bowling Music 1
-  music2: rtsp://10.43.60.12:8554/ch0/2   # Bowling Music 2
-  mms1: rtsp://10.43.60.13:8554/ch0/2   # MMS 1
-  mms2: rtsp://10.43.60.60:8554/ch0/2   # MMS 2
-  atmosphere: rtsp://10.43.60.56:8554/ch0/2   # Atmosphere
-  meeting: rtsp://10.43.60.67:8554/ch0/2   # Meeting Room PC
+  # HeadPinz Fort Myers
+  "10.43.60.3": rtsp://10.43.60.3:8554/ch0/2   # DTV 1
+  "10.43.60.4": rtsp://10.43.60.4:8554/ch0/2   # DTV 2
+  "10.43.60.5": rtsp://10.43.60.5:8554/ch0/2   # DTV 3
+  "10.43.60.6": rtsp://10.43.60.6:8554/ch0/2   # DTV 4
+  "10.43.60.7": rtsp://10.43.60.7:8554/ch0/2   # DTV 5
+  "10.43.60.8": rtsp://10.43.60.8:8554/ch0/2   # DTV 6
+  "10.43.60.9": rtsp://10.43.60.9:8554/ch0/2   # DTV 7
+  "10.43.60.10": rtsp://10.43.60.10:8554/ch0/2   # DTV 8
+  "10.43.60.11": rtsp://10.43.60.11:8554/ch0/2   # Bowling Music 1
+  "10.43.60.12": rtsp://10.43.60.12:8554/ch0/2   # Bowling Music 2
+  "10.43.60.13": rtsp://10.43.60.13:8554/ch0/2   # MMS 1
+  "10.43.60.60": rtsp://10.43.60.60:8554/ch0/2   # MMS 2
+  "10.43.60.56": rtsp://10.43.60.56:8554/ch0/2   # Atmosphere
+  "10.43.60.67": rtsp://10.43.60.67:8554/ch0/2   # Meeting Room PC
+  # HeadPinz Naples
+  "10.40.60.3": rtsp://10.40.60.3:8554/ch0/2   # DTV 1
+  "10.40.60.4": rtsp://10.40.60.4:8554/ch0/2   # DTV 2
+  "10.40.60.5": rtsp://10.40.60.5:8554/ch0/2   # DTV 3
+  "10.40.60.6": rtsp://10.40.60.6:8554/ch0/2   # DTV 4
+  "10.40.60.7": rtsp://10.40.60.7:8554/ch0/2   # DTV 5
+  "10.40.60.8": rtsp://10.40.60.8:8554/ch0/2   # DTV 6
+  "10.40.60.10": rtsp://10.40.60.10:8554/ch0/2   # DTV 7
+  "10.40.60.11": rtsp://10.40.60.11:8554/ch0/2   # DTV 8
+  "10.40.60.2": rtsp://10.40.60.2:8554/ch0/2   # Music 1
+  "10.40.60.9": rtsp://10.40.60.9:8554/ch0/2   # Music 2
+  "10.40.60.60": rtsp://10.40.60.60:8554/ch0/2   # MMS 1
+  "10.40.60.59": rtsp://10.40.60.59:8554/ch0/2   # MMS 2

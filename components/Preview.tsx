@@ -8,8 +8,9 @@ import { useEffect, useRef, useState } from "react";
 const MAX = 3, TIMEOUT = 12000, GAP = 1500;
 const loadedScripts = new Set<string>();
 
-function parseGo2rtc(url: string): { origin: string; name: string } | null {
-  try { const u = new URL(url); const m = u.pathname.match(/\/api\/stream\.(mp4|m3u8|mjpeg)$/); const name = u.searchParams.get("src"); return m && name ? { origin: u.origin, name } : null; } catch { return null; }
+// A go2rtc-style gateway URL: <base>/api/ws?src=NAME (or /api/stream.mp4). <base> may carry a path (Pandora: /v2/preview).
+function parseGo2rtc(url: string): { base: string; name: string } | null {
+  try { const u = new URL(url); const m = u.pathname.match(/^(.*)\/api\/(ws|stream\.(mp4|m3u8|mjpeg))$/); const name = u.searchParams.get("src"); return m && name ? { base: u.origin + m[1], name } : null; } catch { return null; }
 }
 function loadScript(src: string) {
   if (loadedScripts.has(src) || customElements.get("video-stream")) return Promise.resolve();
@@ -35,13 +36,13 @@ export default function Preview({ url, name }: { url: string | null; name: strin
       const fail = () => { if (settled || !alive) return; settled = true; clearTimeout(timer); if (attempt < MAX) timer = setTimeout(go, GAP); else { cleanup(); setOn(false); setTag(`Preview · ${name} · not reachable from this device`); } };
       timer = setTimeout(fail, TIMEOUT);
       if (g) {
-        try { await loadScript(`${g.origin}/video-stream.js`); } catch { fail(); return; }
+        try { await loadScript(`${g.base}/video-stream.js`); } catch { fail(); return; }
         if (!alive) return;
         const vs = document.createElement("video-stream") as HTMLElement & { src?: string; mode?: string; background?: boolean };
         vs.className = "pvmedia";
         vs.setAttribute("mode", "mse,webrtc,hls");
         vs.setAttribute("background", "");
-        vs.setAttribute("src", `${g.origin.replace(/^http/, "ws")}/api/ws?src=${encodeURIComponent(g.name)}`);
+        vs.setAttribute("src", `${g.base.replace(/^http/, "ws")}/api/ws?src=${encodeURIComponent(g.name)}`);
         el = vs; host.current?.appendChild(vs);
         // the element creates its own <video>; first frame = playing
         const watch = () => { const v = vs.querySelector("video"); if (v) { v.muted = true; v.addEventListener("playing", ok, { once: true }); v.addEventListener("error", fail, { once: true }); if (!v.paused && v.readyState >= 2) ok(); } else if (!settled) setTimeout(watch, 200); };
