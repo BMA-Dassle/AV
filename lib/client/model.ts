@@ -1,5 +1,5 @@
 // Client-side view model derived from the API snapshot, plus channel/program lookups against the guide.
-import type { Snapshot, TunedView, WallView } from "@/lib/server/state";
+import type { ScheduleView, Snapshot, TunedView, WallView } from "@/lib/server/state";
 import type { PlanConfig } from "@/lib/server/config";
 import type { Guide, GuideChannel, Program } from "@/lib/server/guide";
 import type { Catalog } from "./api";
@@ -9,19 +9,20 @@ export type Tv = { id: string; name: string; zone: string; src: string | null; x
 export type Wall = WallView;
 export type Other = { id: string; name: string; kind: string };
 export type Zone = { id: string; name: string };
-export type Model = { site: string; siteSlug: string; zones: Zone[]; tvs: Tv[]; boxes: Box[]; other: Other[]; time: number; plan: PlanConfig; walls: Wall[] };
+export type Model = { site: string; siteSlug: string; zones: Zone[]; tvs: Tv[]; boxes: Box[]; other: Other[]; time: number; plan: PlanConfig; walls: Wall[]; schedule: ScheduleView[] };
 
 export function toModel(snap: Snapshot): Model {
   return {
     site: snap.site.shortName, siteSlug: snap.site.slug, time: snap.site.time, zones: snap.zones, plan: snap.site.plan || { panels: [], tile: [120, 70] },
     tvs: snap.tvs.map((t) => ({ id: t.id, name: t.name, zone: t.zone, src: t.sourceId, x: t.map?.[0] ?? 0, y: t.map?.[1] ?? 0, error: t.error, display: t.display ?? null, wallId: t.wallId ?? null })),
     walls: snap.walls || [],
+    schedule: snap.schedule || [],
     boxes: snap.boxes.map((b) => ({ id: b.id, name: b.name, color: b.color, channel: b.tuned?.channel ?? null, tuned: b.tuned, online: b.online, error: b.error, offlineSince: b.offlineSince ?? null, pending: Boolean(b.tuned?.pending), preview: b.preview, powerControl: Boolean(b.powerControl) })),
     other: snap.otherSources.map((o) => ({ id: o.id, name: o.name, kind: o.kind ? o.kind[0].toUpperCase() + o.kind.slice(1) : "" })),
   };
 }
 
-export const EMPTY: Model = { site: "", siteSlug: "", zones: [], tvs: [], boxes: [], other: [], time: 0, plan: { panels: [], tile: [120, 70] }, walls: [] };
+export const EMPTY: Model = { site: "", siteSlug: "", zones: [], tvs: [], boxes: [], other: [], time: 0, plan: { panels: [], tile: [120, 70] }, walls: [], schedule: [] };
 
 export const boxById = (m: Model, id: string | null | undefined) => m.boxes.find((b) => b.id === id) || null;
 export const tvById = (m: Model, id: string) => m.tvs.find((t) => t.id === id) || null;
@@ -71,3 +72,26 @@ export function suggestBox(m: Model, num: number) {
   const free = m.boxes.find((b) => tvsOn(m, b.id).length === 0 && b.online !== false); if (free) return { box: free, reason: "not on any screen" };
   const least = [...m.boxes].sort((a, b) => tvsOn(m, a.id).length - tvsOn(m, b.id).length)[0]; return { box: least, reason: `fewest screens (${tvsOn(m, least.id).length})` };
 }
+
+// ---- scheduled changes ----
+export type Scheduled = ScheduleView;
+// Pending changes that tune this box, soonest first.
+export const schedForBox = (m: Model, boxId: string) => m.schedule.filter((i) => i.status === "pending" && i.actions.some((a) => a.type === "tune" && a.boxId === boxId)).sort((a, b) => a.runAt - b.runAt);
+// The pending change made for this airing (channel + start), if any.
+export const schedForProgram = (m: Model, nums: number[], start: number) => m.schedule.find((i) => i.status === "pending" && i.program && nums.includes(i.program.num) && i.program.start === start) || null;
+export const tuneOf = (i: ScheduleView) => i.actions.find((a) => a.type === "tune") as { type: "tune"; boxId: string; channel: number } | undefined;
+export function describeActions(m: Model, gi: GuideIndex, cat: Catalog, i: ScheduleView): string[] {
+  return i.actions.map((a) => {
+    if (a.type === "tune") { const c = chan(gi, cat, a.channel); return `Tune ${boxById(m, a.boxId)?.name || a.boxId} to ${c.cs} ${a.channel}`; }
+    if (a.type === "source") return `Show ${a.sourceId ? srcName(m, a.sourceId) : "nothing"} on ${label(m, a.tvIds)}`;
+    if (a.type === "wall") return `${wallById(m, a.wallId)?.name || a.wallId}: ${a.mode === "wall" ? "one picture" : "separate screens"}`;
+    return `Power ${a.on ? "on" : "off"} ${label(m, a.tvIds)}`;
+  });
+}
+export function dayLabel(ms: number) {
+  const d = new Date(ms); const t = new Date(); const tm = new Date(Date.now() + 86400000);
+  if (d.toDateString() === t.toDateString()) return "Today";
+  if (d.toDateString() === tm.toDateString()) return "Tomorrow";
+  return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+}
+export function untilText(ms: number, now = Date.now()) { const m = Math.round((ms - now) / 60000); if (m <= 0) return "due now"; if (m < 60) return `in ${m} min`; const h = Math.floor(m / 60); return h < 24 ? `in ${h} h ${m % 60} min` : `in ${Math.floor(h / 24)} d`; }

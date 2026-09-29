@@ -8,14 +8,17 @@ import { pandora as realPandora, type PandoraClient } from "./pandora";
 import { shef as realShef, type ShefClient, type Tuned } from "./shef";
 import { projector } from "./projector";
 import { hasStore, store } from "./store";
+import { schedule, GRACE_MS, type Action, type ScheduleItem } from "./schedule";
 
 export type TunedView = { channel: number; minor: number | null; callsign: string; channelName: string; title: string; episodeTitle: string; startTime: number | null; duration: number | null; isRecording: boolean; at: number; pending?: boolean };
 export type BoxView = { id: string; name: string; color: string; receiverId: string | null; online: boolean | null; error: string | null; offlineSince: number | null; tuned: TunedView | null; tvCount: number; configured: boolean; preview: string | null; powerControl: boolean };
 export type TvView = { id: string; name: string; zone: string; map?: [number, number]; sourceId: string | null; lastChange: number | null; error: string | null; configured: boolean; display: { kind: string; power: boolean | null } | null; wallId: string | null };
 export type WallView = { id: string; name: string; rows: string[][]; mode: "wall" | "screens" | null; sourceId: string | null; busy: boolean; error: string | null };
+export type ScheduleView = Omit<ScheduleItem, "site" | "result">;
 export type Snapshot = {
   site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; timezone: string; mock: boolean; time: number; plan: PlanConfig };
   zones: { id: string; name: string }[]; tvs: TvView[]; boxes: BoxView[]; otherSources: { id: string; name: string; kind: string; tvCount: number }[]; walls: WallView[];
+  schedule: ScheduleView[];   // pending and running scheduled changes, soonest first
 };
 
 type TvState = TvConfig & { sourceId: string | null; lastChange: number | null; error: string | null; power: boolean | null };
@@ -55,7 +58,8 @@ export class SiteState {
     if (this.hydrating) return this.hydrating;
     this.hydrating = (async () => {
       try {
-        const [tvRows, boxRows, wallRows] = await Promise.all([store.loadTvs(this.site.site.slug), store.loadBoxes(this.site.site.slug), this.walls.size ? store.loadWalls(this.site.site.slug) : Promise.resolve([])]);
+        const [tvRows, boxRows, wallRows, sched] = await Promise.all([store.loadTvs(this.site.site.slug), store.loadBoxes(this.site.site.slug), this.walls.size ? store.loadWalls(this.site.site.slug) : Promise.resolve([]), schedule.list(this.site.site.slug, 0).catch(() => this.pendingSchedule)]);
+        this.pendingSchedule = sched.filter((i) => i.status === "pending" || i.status === "running");
         for (const r of wallRows) { const w = this.walls.get(r.wall_id); if (!w || w.busy) continue; const at = Date.parse(r.changed_at); if (at >= w.changedAt) { w.mode = (r.mode as any) ?? w.mode; w.sourceId = r.source_id ?? null; w.tileSources = r.tile_sources || {}; w.changedAt = at; } }
         if (tvRows.length) this.ready = true;
         for (const r of tvRows) { const t = this.tvs.get(r.tv_id); if (!t) continue; const at = Date.parse(r.changed_at); if (!t.lastChange || at >= t.lastChange) { t.sourceId = r.source_id ?? null; if (r.power != null) t.power = r.power; t.lastChange = at; } }
@@ -97,6 +101,7 @@ export class SiteState {
       tvs,
       boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || this.via !== "shef", preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),
       otherSources: [...this.others.values()].filter((o) => cfg.mock || o.encoder?.ip).map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
+      schedule: this.pendingSchedule.map(({ site: _s, result: _r, ...v }) => v),
       walls: [...this.walls.values()].map((w) => ({ id: w.id, name: w.name, rows: w.rows, mode: w.mode, sourceId: w.sourceId, busy: w.busy, error: w.error })),
     };
   }
@@ -187,6 +192,7 @@ export class SiteState {
   // converges on the hardware truth within one interval of any change made through another instance.
   async ensureFresh() {
     await this.hydrate();
+    void this.runDue();
     const stale = Date.now() - this.lastPoll > cfg.shef.pollMs;
     const jobs: Promise<unknown>[] = [];
     if (stale) jobs.push(this.refreshAllBoxes());
@@ -200,11 +206,26 @@ export class SiteState {
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
     const major = Number(channel);
     if (!Number.isInteger(major) || major < 1 || major > 9999) throw new HttpError("Channel must be 1-9999", 400);
-    if (this.via === "pandora") await this.pandoraTune(box, major);
-    else {
-      const ip = this.shefIp(box);
-      if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
-      await this.shef.tune(ip, major, undefined, box.shef?.clientAddr || "0");
+    // A box answers "busy" (SHEF 500 request conflict -> Pandora 409) when another request to it is in flight (it
+    // handles one at a time and every instance polls it) or a menu/popup is up. Retry with a short backoff; before the
+    // second try send Exit to clear anything on screen. Only a box that is still busy after that reports an error.
+    const once = async () => {
+      if (this.via === "pandora") await this.pandoraTune(box, major);
+      else {
+        const ip = this.shefIp(box);
+        if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
+        await this.shef.tune(ip, major, undefined, box.shef?.clientAddr || "0");
+      }
+    };
+    const busy = (e: any) => e?.status === 409 || /busy|conflict/i.test(String(e?.message || ""));
+    for (let attempt = 1; ; attempt++) {
+      try { await once(); break; }
+      catch (e: any) {
+        if (!busy(e) || attempt >= 3) { if (busy(e)) throw new HttpError(`${box.name} is busy and did not take the change after ${attempt} tries. Check nothing is open on its screen, then try again.`, 409); throw e; }
+        await new Promise((r) => setTimeout(r, 700 * attempt));
+        if (attempt === 1) { try { await this.sendKeyRaw(box, "exit"); await new Promise((r) => setTimeout(r, 600)); } catch { /* exit is best effort */ } }
+        this.log("box.tune.retry", { box: box.id, channel: major, attempt, error: String(e?.message || e) });
+      }
     }
     const ch = findChannel(major);
     box.tuned = { ...(box.tuned || { minor: null, title: "", episodeTitle: "", startTime: null, duration: null, isRecording: false, at: 0 }), channel: major, callsign: ch?.callsign || "", channelName: ch?.name || `Channel ${major}`, title: "", pending: true, at: Date.now() };
@@ -517,6 +538,45 @@ export class SiteState {
     }
   }
 
+  // ---- Scheduled changes (lib/server/schedule.ts) ----
+  pendingSchedule: ScheduleItem[] = [];
+  private lastDueCheck = 0;
+  private runningDue: Promise<void> | null = null;
+  async reloadSchedule() {
+    try { this.pendingSchedule = (await schedule.list(this.site.site.slug, 0)).filter((i) => i.status === "pending" || i.status === "running"); } catch (e: any) { console.warn("schedule load failed:", e?.message); }
+    this.emit();
+  }
+  // Run whatever is due. Called on every state read / live-feed tick (throttled) and by /api/schedule/run (cron).
+  async runDue(force = false) {
+    if (this.runningDue) return this.runningDue;
+    if (!force && Date.now() - this.lastDueCheck < 10000) return;
+    this.lastDueCheck = Date.now();
+    this.runningDue = (async () => {
+      await schedule.unstick(this.site.site.slug).catch(() => {});
+      const due = await schedule.claimDue(this.site.site.slug).catch((e) => { console.warn("schedule claim failed:", e?.message); return [] as ScheduleItem[]; });
+      for (const item of due) {
+        const now = Date.now(); const lateBy = now - item.runAt;
+        if (lateBy > GRACE_MS && (item.program?.end ?? item.runAt + GRACE_MS) < now) { await schedule.finish(item, "missed", null, `not run: ${Math.round(lateBy / 60000)} min late and the program is over`); this.log("schedule.missed", { id: item.id, label: item.label }); continue; }
+        const results: { action: Action; ok: boolean; error?: string }[] = [];
+        for (const a of item.actions) {
+          try {
+            if (a.type === "tune") await this.tuneBox(a.boxId, a.channel);
+            else if (a.type === "source") { const r = await this.setTvSource(a.tvIds, a.sourceId); const bad = r.filter((x) => !x.ok); if (bad.length) throw new Error(`${bad.length} screen(s) failed: ${bad.map((x) => x.error).filter(Boolean)[0] || "error"}`); }
+            else if (a.type === "wall") await this.setWallMode(a.wallId, a.mode, a.sourceId);
+            else if (a.type === "power") { const r = await this.setTvPower(a.tvIds, a.on); const bad = r.filter((x) => !x.ok); if (bad.length) throw new Error(`${bad.length} display(s) failed`); }
+            results.push({ action: a, ok: true });
+            if (a.type === "tune") await new Promise((r) => setTimeout(r, 1500));   // let the box settle before screens switch to it
+          } catch (e: any) { results.push({ action: a, ok: false, error: e?.message || String(e) }); }
+        }
+        const failed = results.filter((r) => !r.ok);
+        await schedule.finish(item, failed.length ? "failed" : "done", results, failed.length ? failed.map((f) => f.error).join("; ") : null);
+        this.log("schedule.run", { id: item.id, label: item.label, ok: !failed.length, lateBy: Math.round(lateBy / 1000) });
+      }
+      if (due.length) await this.reloadSchedule();
+    })().finally(() => { this.runningDue = null; });
+    return this.runningDue;
+  }
+
   // Each tick also pulls the shared store, and re-reads the decoders every 30 s: an instance holding a live feed open
   // must not keep broadcasting its own old picture of the floor (Video Wall 1 flipped back to "Wall" that way).
   start() {
@@ -524,6 +584,7 @@ export class SiteState {
     void this.hydrate(true).then(() => this.refreshAllBoxes()); void this.reconcileTvs();
     this.timer = setInterval(async () => {
       await this.hydrate();
+      void this.runDue();
       if (!cfg.mock && Date.now() - this.lastReconcile > 30000) void this.reconcileTvs();
       await this.refreshAllBoxes();
     }, cfg.shef.pollMs);

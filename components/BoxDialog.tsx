@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { boxNow, chan, fmtT, groupNames, progAt, tvsOn, type Box, type GuideIndex, type Model } from "@/lib/client/model";
+import { boxNow, chan, fmtT, groupNames, schedForBox, tuneOf, tvsOn, untilText, type Box, type GuideIndex, type Model } from "@/lib/client/model";
 import type { Catalog } from "@/lib/client/api";
 import type { Channel } from "@/lib/server/channels";
 import Preview from "./Preview";
@@ -12,7 +12,7 @@ import { RecoveryPanel, type RecoverFn } from "./Recovery";
 const CATS: [string, string][] = [["live", "Live sports"], ["fav", "Favorites"], ["sports", "Sports"], ["local", "Locals"], ["st", "Sunday Ticket"], ["all", "All"]];
 const PAD = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClose, onRecover, onFav }: { m: Model; gi: GuideIndex; cat: Catalog; box: Box; live: boolean; onTune: (num: number) => void; onKey: (key: string) => void; onClose: () => void; onRecover: RecoverFn; onFav: (num: number, on: boolean) => void }) {
+export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClose, onRecover, onFav, onCancelSchedule }: { m: Model; gi: GuideIndex; cat: Catalog; box: Box; live: boolean; onTune: (num: number) => void; onKey: (key: string) => void; onClose: () => void; onRecover: RecoverFn; onFav: (num: number, on: boolean) => void; onCancelSchedule: (id: string) => Promise<void> }) {
   const [tab, setTab] = useState(() => { try { return localStorage.getItem("hp-boxtab") || "live"; } catch { return "live"; } });
   const pickTab = (k: string) => { setTab(k); try { localStorage.setItem("hp-boxtab", k); } catch { /* private mode */ } };
   const [q, setQ] = useState("");
@@ -64,6 +64,13 @@ export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClos
               <div className="t">{p ? p.sub || p.title : c.name}</div>
               <div className="m">{p && p.start && p.end ? `${fmtT(p.start)} – ${fmtT(p.end)}` : ""}{box.pending ? " · tuning…" : ""}</div>
             </div>
+            {schedForBox(m, box.id).length > 0 && (
+              <div className="alert info"><span className="ico">⏱</span><div><b>Scheduled for this box</b>
+                {schedForBox(m, box.id).slice(0, 4).map((i) => { const t = tuneOf(i); return (
+                  <div key={i.id} className="schedline"><span><b className="num">{fmtT(i.runAt)}</b> → {chan(gi, cat, t?.channel ?? null).cs} {t?.channel} · {i.label} <small>({untilText(i.runAt)})</small></span>
+                    <button className="btn ghost sm" onClick={() => void onCancelSchedule(i.id)} aria-label={`Cancel ${i.label}`}>Cancel</button></div>); })}
+              </div></div>
+            )}
             {box.online === false && <RecoveryPanel m={m} box={box} onRecover={onRecover} />}
             {feeds.length ? (
               <div className="alert warn"><span className="ico">⚠</span><div><b>Feeds {feeds.length} screen{feeds.length > 1 ? "s" : ""}.</b> Changing the channel changes all of them.

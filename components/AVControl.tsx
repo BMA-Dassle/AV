@@ -8,7 +8,8 @@ import BoxesStrip from "./BoxesStrip";
 import FloorMap from "./FloorMap";
 import SelectionBar from "./SelectionBar";
 import BoxDialog from "./BoxDialog";
-import { GuideGrid, ProgramDialog } from "./GuidePage";
+import { GuideGrid, ProgramDialog, type ScheduleReq } from "./GuidePage";
+import SchedulePage from "./SchedulePage";
 import { OfflineBanner } from "./Recovery";
 import WallDialog from "./WallDialog";
 
@@ -23,7 +24,7 @@ function App() {
   const [locs, setLocs] = useState<LocationInfo[]>([]);
   const [gi, setGi] = useState<GuideIndex>(indexGuide(null));
   const [gridStart, setGridStart] = useState(() => halfHourFloor(Date.now()));
-  const [tab, setTab] = useState<"tvs" | "guide">("tvs");
+  const [tab, setTab] = useState<Tab>("tvs");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [hl, setHl] = useState<string | null>(null);
   const [busy, setBusy] = useState<Set<string>>(new Set());
@@ -73,11 +74,11 @@ function App() {
     void boot();
     const g = setInterval(loadGuide, 10 * 60000);
     const t = setInterval(() => { setClock(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })); const gs = halfHourFloor(Date.now()); setGridStart((cur) => (cur === gs ? cur : gs)); }, 1000);
-    try { const saved = localStorage.getItem("hp-tab"); if (saved === "guide") setTab("guide"); } catch { /* private mode */ }
+    try { const saved = localStorage.getItem("hp-tab"); if (saved === "guide" || saved === "schedule") setTab(saved); } catch { /* private mode */ }
     return () => { alive = false; clearTimeout(retry); es?.close(); if (poll) clearInterval(poll); clearInterval(g); clearInterval(t); };
   }, [applySnap, loadGuide]);
 
-  const switchTab = (t: "tvs" | "guide") => { setTab(t); try { localStorage.setItem("hp-tab", t); } catch { /* private mode */ } };
+  const switchTab = (t: Tab) => { setTab(t); try { localStorage.setItem("hp-tab", t); } catch { /* private mode */ } };
   const toggleTv = (id: string) => { setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setHl(null); };
   const zoneAll = (zone: string) => { const list = mRef.current.tvs.filter((t) => t.zone === zone); setSel((s) => { const all = list.every((t) => s.has(t.id)); const n = new Set(s); list.forEach((t) => (all ? n.delete(t.id) : n.add(t.id))); return n; }); setHl(null); };
 
@@ -104,6 +105,24 @@ function App() {
   const setFavorite = async (num: number, on: boolean) => {
     setCat((c) => { const nums = c.favoriteNums || c.favorites.map((x) => x.num); const next = on ? (nums.includes(num) ? nums : [...nums, num]) : nums.filter((n) => n !== num); return { ...c, favoriteNums: next }; });
     try { setCat(await api.setFavorite(num, on)); } catch (e: any) { toast(<>Could not save favorites: {e?.message}</>, "error"); api.channels().then(setCat).catch(() => {}); }
+  };
+  // ---- scheduled changes ----
+  const createSchedule = async (r: ScheduleReq) => {
+    try {
+      await api.scheduleCreate(r);
+      const t = r.actions.find((a) => a.type === "tune"); const b = t && t.type === "tune" ? boxById(mRef.current, t.boxId) : null;
+      toast(<>Scheduled: <b>{b?.name}</b> changes to <b>{r.label}</b> at {new Date(r.runAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</>, "info");
+      try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
+      return true;
+    } catch (e: any) { toast(<>Could not schedule: {e?.message}</>, "error"); return false; }
+  };
+  const cancelSchedule = async (id: string) => {
+    try { await api.scheduleCancel(id); toast(<>Scheduled change canceled</>, "info"); } catch (e: any) { toast(<>Could not cancel: {e?.message}</>, "error"); }
+    try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
+  };
+  const runSchedule = async (id: string) => {
+    try { await api.scheduleRun(id); toast(<>Ran the scheduled change</>, "info"); } catch (e: any) { toast(<>Could not run it: {e?.message}</>, "error"); }
+    try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
   };
   const sendKey = async (boxId: string, key: string) => {
     const b = boxById(mRef.current, boxId); if (!b) return;
@@ -166,6 +185,11 @@ function App() {
           <FloorMap m={m} gi={gi} cat={cat} sel={sel} hl={hl} busy={busy} zoneZoom={zoneZoom} onToggle={toggleTv} onZone={setZoneZoom} onZoneAll={zoneAll} onWallMode={onWallMode} onWallSelect={onWallSelect} />
           <div className="foot"><span>Boxes: DirecTV SHEF <code>/tv/getTuned</code> every 10 s</span><span>Screens: Pandora <code>POST /hdtv/source</code></span></div>
         </section>
+      ) : tab === "schedule" ? (
+        <section className="page">
+          <div className="ptitle"><h1>Schedule</h1><span className="sub">Changes that happen on their own, at their time</span></div>
+          <SchedulePage m={m} gi={gi} cat={cat} sel={sel} onCreate={createSchedule} onCancel={cancelSchedule} onRunNow={runSchedule} />
+        </section>
       ) : (
         <section className="page">
           <div className="ptitle"><h1>What&apos;s On</h1><span className="sub">Find a game, then put it on screens</span></div>
@@ -174,16 +198,17 @@ function App() {
       )}
       {sel.size > 0 && <style>{`main{padding-bottom:calc(58vh + env(safe-area-inset-bottom,0px))!important}`}</style>}
       <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} onPower={(ids, on) => void setPower(ids, on)} />
-      {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover}
+      {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover} onCancelSchedule={cancelSchedule}
         onFav={(num, on) => void setFavorite(num, on)} onTune={async (num) => { await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { await sendKey(openBoxObj.id, k); }} />}
       {wallPick && (() => { const w = m.walls.find((x) => x.id === wallPick); return w ? <WallDialog m={m} gi={gi} cat={cat} wall={w} onClose={() => setWallPick(null)} onConfirm={(src) => { setWallPick(null); void setWallMode(w.id, "wall", src); }} /> : null; })()}
-      {openProg && <ProgramDialog m={m} gi={gi} cat={cat} sel={sel} c={openProg.c} p={openProg.p} onClose={() => setOpenProg(null)} onTuneBox={tuneBox} onSend={applySource}
+      {openProg && <ProgramDialog m={m} gi={gi} cat={cat} sel={sel} c={openProg.c} p={openProg.p} onClose={() => setOpenProg(null)} onTuneBox={tuneBox} onSend={applySource} onSchedule={createSchedule} onCancelSchedule={cancelSchedule}
         onPick={(boxName, title) => { switchTab("tvs"); toast(<>Tap the screens that should show <b>{title}</b>, then pick <b>{boxName}</b> in the bar below.</>, "info"); }} />}
     </Shell>
   );
 }
 
-function Shell({ children, clock, tab, onTab, locs, m, liveDot }: { children: React.ReactNode; clock: string; tab: "tvs" | "guide"; onTab: (t: "tvs" | "guide") => void; locs: LocationInfo[]; m: Model; liveDot: boolean }) {
+type Tab = "tvs" | "guide" | "schedule";
+function Shell({ children, clock, tab, onTab, locs, m, liveDot }: { children: React.ReactNode; clock: string; tab: Tab; onTab: (t: Tab) => void; locs: LocationInfo[]; m: Model; liveDot: boolean }) {
   const loc = currentLocation();
   const [narrow, setNarrow] = useState(false);
   useEffect(() => { const q = window.matchMedia("(max-width: 640px)"); const f = () => setNarrow(q.matches); f(); q.addEventListener("change", f); return () => q.removeEventListener("change", f); }, []);
@@ -200,6 +225,7 @@ function Shell({ children, clock, tab, onTab, locs, m, liveDot }: { children: Re
           <div className="tabs" role="tablist">
             <button role="tab" aria-selected={tab === "tvs"} onClick={() => onTab("tvs")}>TVs</button>
             <button role="tab" aria-selected={tab === "guide"} onClick={() => onTab("guide")}>Guide</button>
+            <button role="tab" aria-selected={tab === "schedule"} onClick={() => onTab("schedule")}>Schedule{m.schedule.length ? <span className="tabn">{m.schedule.length}</span> : null}</button>
           </div>
           {locs.length > 1 ? (
             <select className="loc" aria-label="Location" value={locs.find((l) => l.slug === loc || l.squareLocationIDs.includes(loc))?.slug || m.siteSlug} onChange={(e) => { const u = new URL(window.location.href); u.searchParams.set("location", e.target.value); window.location.href = u.toString(); }}>

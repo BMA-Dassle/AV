@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { chan, fmtT, label, suggestBox, tvById, tvsOn, type GuideIndex, type Model } from "@/lib/client/model";
+import { boxNow, chan, describeActions, fmtT, label, schedForBox, schedForProgram, suggestBox, tuneOf, tvsOn, untilText, type GuideIndex, type Model, type Scheduled } from "@/lib/client/model";
 import type { Catalog } from "@/lib/client/api";
 import type { GuideChannel, Program } from "@/lib/server/guide";
 import SportsList from "./SportsList";
@@ -81,12 +81,12 @@ export function GuideGrid({ m, gi, cat, sel, gridStart, onProgram }: Props) {
                   {c.programs.filter((p) => p.end > gridStart && p.start < gridEnd).map((p) => {
                     const s = Math.max(gridStart, p.start), e = Math.min(gridEnd, p.end);
                     const left = ((s - gridStart) / SPAN) * 100, width = Math.max(((e - s) / SPAN) * 100, 1.5);
-                    const live = p.start <= now && p.end > now; const past = p.end <= now;
+                    const live = p.start <= now && p.end > now; const past = p.end <= now; const sch = schedForProgram(m, [c.num], p.start);
                     return (
-                      <button key={p.start} className={`prog ${p.sport ? "sport" : ""} ${live ? "live" : ""} ${past ? "past" : ""} ${on.length && live ? "onbox" : ""} ${p.start < gridStart ? "cut" : ""}`}
+                      <button key={p.start} className={`prog ${p.sport ? "sport" : ""} ${live ? "live" : ""} ${past ? "past" : ""} ${on.length && live ? "onbox" : ""} ${p.start < gridStart ? "cut" : ""} ${sch ? "sched" : ""}`}
                         style={{ left: `${left}%`, width: `${width}%`, "--c": on[0]?.color || "" } as React.CSSProperties} disabled={past} onClick={() => onProgram(c, p)}
                         title={`${p.title}${p.subtitle ? " · " + p.subtitle : ""} · ${fmtT(p.start)}–${fmtT(p.end)}`}>
-                        <span className="t">{p.filler ? "Nothing scheduled" : isEvent(p) ? matchupOf(p) : p.title}</span>
+                        <span className="t">{sch ? "⏱ " : ""}{p.filler ? "Nothing scheduled" : isEvent(p) ? matchupOf(p) : p.title}</span>
                         <span className="s">{isEvent(p) ? p.title : p.subtitle || ""}{(isEvent(p) ? p.title : p.subtitle) ? " · " : ""}{fmtT(p.start)}–{fmtT(p.end)}{live ? " · LIVE" : ""}{p.league ? ` · ${p.league}` : ""}</span>
                       </button>
                     );
@@ -109,29 +109,81 @@ export function GuideGrid({ m, gi, cat, sel, gridStart, onProgram }: Props) {
   );
 }
 
-export function ProgramDialog({ m, gi, cat, sel, c, p, onClose, onTuneBox, onSend, onPick }: { m: Model; gi: GuideIndex; cat: Catalog; sel: Set<string>; c: GuideChannel; p: Program; onClose: () => void; onTuneBox: (boxId: string, num: number) => Promise<void>; onSend: (ids: string[], boxId: string) => Promise<void>; onPick: (boxName: string, title: string) => void }) {
+// Program dialog: pick any box, then change it now or automatically when the program starts (a scheduled change).
+export type ScheduleReq = { runAt: number; actions: Scheduled["actions"]; label: string; program: Scheduled["program"] };
+export function ProgramDialog({ m, gi, cat, sel, c, p, onClose, onTuneBox, onSend, onPick, onSchedule, onCancelSchedule }: { m: Model; gi: GuideIndex; cat: Catalog; sel: Set<string>; c: GuideChannel; p: Program; onClose: () => void; onTuneBox: (boxId: string, num: number) => Promise<void>; onSend: (ids: string[], boxId: string) => Promise<void>; onPick: (boxName: string, title: string) => void; onSchedule: (r: ScheduleReq) => Promise<boolean>; onCancelSchedule: (id: string) => Promise<void> }) {
+  const now = Date.now();
   const ci = chan(gi, cat, c.num); const on = m.boxes.filter((b) => b.channel === c.num); const sug = suggestBox(m, c.num);
-  const selected = [...sel]; const live = p.start <= Date.now() && p.end > Date.now();
+  const selected = [...sel]; const live = p.start <= now && p.end > now; const future = p.start > now;
   const title = p.filler ? "Nothing scheduled" : isEvent(p) ? matchupOf(p) : p.title;
+  const [boxId, setBoxId] = useState<string>(on[0]?.id ?? sug.box.id);
+  const [when, setWhen] = useState<"auto" | "now">(future ? "auto" : "now");
+  const [withScreens, setWithScreens] = useState(selected.length > 0);
+  const [busy, setBusy] = useState(false);
+  const box = m.boxes.find((b) => b.id === boxId) || sug.box;
+  const already = schedForProgram(m, [c.num], p.start);
+  const boxOnIt = box.channel === c.num;
+  const moves = tvsOn(m, box.id).length;
+  // other scheduled changes for this box that would fight with this one (between now and the end of the program)
+  const clashes = schedForBox(m, box.id).filter((i) => i.id !== already?.id && i.runAt < p.end && (i.program?.end ?? i.runAt) > (when === "auto" ? p.start : now));
+  const actions: Scheduled["actions"] = [{ type: "tune", boxId: box.id, channel: c.num }, ...(withScreens && selected.length ? [{ type: "source" as const, tvIds: selected, sourceId: box.id }] : [])];
+  const program = { num: c.num, callsign: c.callsign, title: p.title, subtitle: p.subtitle, start: p.start, end: p.end };
+  const go = async () => {
+    setBusy(true);
+    try {
+      if (when === "auto") { if (await onSchedule({ runAt: p.start, actions, label: title, program })) onClose(); return; }
+      onClose();
+      if (!boxOnIt) await onTuneBox(box.id, c.num);
+      if (withScreens && selected.length) await onSend(selected, box.id);
+    } finally { setBusy(false); }
+  };
+  const dupe = when === "auto" && already && already.actions.some((a) => a.type === "tune" && a.boxId === box.id);
+  const primary = dupe ? `${box.name} is already scheduled` : when === "auto"
+    ? `Change ${box.name} at ${fmtT(p.start)}${withScreens && selected.length ? ` + ${selected.length} screen${selected.length > 1 ? "s" : ""}` : ""}`
+    : boxOnIt ? (withScreens && selected.length ? `Put on ${selected.length} screen${selected.length > 1 ? "s" : ""}` : `${box.name} is already on it`)
+    : `Tune ${box.name} now${withScreens && selected.length ? ` + ${selected.length} screen${selected.length > 1 ? "s" : ""}` : ""}`;
   return (
     <div className="overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="dlg" role="dialog" aria-modal="true">
+      <div className="dlg pdlg" role="dialog" aria-modal="true" aria-label={title}>
         <div className="hd"><h2>{title}</h2><button className="x" onClick={onClose} aria-label="Close">✕</button></div>
-        <div className="now"><div className="big">{ci.cs}<small className="num">{ci.num}</small></div><div className="t">{isEvent(p) ? p.title : p.subtitle || ci.name}{p.liveBroadcast && isEvent(p) ? " · live broadcast" : ""}</div><div className="m">{fmtT(p.start)} – {fmtT(p.end)}{live ? " · live now" : " · starts later"}</div></div>
-        {on.length ? (
-          <div className="alert ok"><span className="ico">✓</span><div><b>Already on {on.map((b) => b.name).join(" and ")}</b> ({on.map((b) => `${tvsOn(m, b.id).length} screens`).join(", ")}). Sending screens there changes nothing else.</div></div>
-        ) : (
-          <div className="alert warn"><span className="ico">⚠</span><div><b>Not on any box yet.</b> Suggested: tune <b>{sug.box.name}</b> ({sug.reason}).{tvsOn(m, sug.box.id).length ? ` That moves its ${tvsOn(m, sug.box.id).length} screens too.` : ""}</div></div>
+        <div className="now"><div className="big">{ci.cs}<small className="num">{ci.num}</small></div><div className="t">{isEvent(p) ? p.title : p.subtitle || ci.name}{p.liveBroadcast && isEvent(p) ? " · live broadcast" : ""}</div>
+          <div className="m">{fmtT(p.start)} – {fmtT(p.end)}{live ? " · on now" : future ? ` · starts ${untilText(p.start, now)}` : ""}</div></div>
+        {already && (
+          <div className="alert info"><span className="ico">⏱</span><div><b>Scheduled:</b> {describeActions(m, gi, cat, already).join(", then ")} at {fmtT(already.runAt)}.
+            <button className="btn outline sm" style={{ marginLeft: 8 }} onClick={() => void onCancelSchedule(already.id)}>Cancel it</button></div></div>
         )}
-        {selected.length > 0 && <div><div className="eyebrow">Selected screens</div><div className="feeds">{selected.map((id) => <span key={id} className="pill">{tvById(m, id)?.name}</span>)}</div></div>}
+        {future && (
+          <div className="seg" role="radiogroup" aria-label="When">
+            <button role="radio" aria-checked={when === "auto"} onClick={() => setWhen("auto")}><b>Change automatically</b><small>at {fmtT(p.start)}, when it starts</small></button>
+            <button role="radio" aria-checked={when === "now"} onClick={() => setWhen("now")}><b>Change now</b><small>tune the box right away</small></button>
+          </div>
+        )}
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Which box</div>
+          <div className="boxpick" role="radiogroup" aria-label="Box">
+            {m.boxes.map((b) => {
+              const bc = chan(gi, cat, b.channel); const bn = boxNow(gi, b); const n = tvsOn(m, b.id).length; const next = schedForBox(m, b.id)[0];
+              return (
+                <button key={b.id} role="radio" aria-checked={b.id === box.id} className={`bpick ${b.id === box.id ? "on" : ""}`} style={{ "--c": b.color } as React.CSSProperties} onClick={() => setBoxId(b.id)} disabled={b.online === false}>
+                  <span className="r1"><span className="nm">{b.name}</span>
+                    {b.channel === c.num ? <span className="chip free">On it</span> : b.online === false ? <span className="chip red">Offline</span> : b.id === sug.box.id ? <span className="chip">Suggested</span> : null}
+                    <span className="sc">{n ? `${n} screen${n > 1 ? "s" : ""}` : "free"}</span></span>
+                  <span className="r2">{b.channel ? `${bc.cs} ${b.channel}` : "—"}{bn ? ` · ${bn.sub || bn.title}` : ""}</span>
+                  {next && <span className="r3">⏱ {fmtT(next.runAt)} → {chan(gi, cat, tuneOf(next)?.channel ?? null).cs}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {moves > 0 && !boxOnIt && <div className="alert warn"><span className="ico">⚠</span><div><b>{box.name} feeds {moves} screen{moves > 1 ? "s" : ""}</b> ({label(m, tvsOn(m, box.id).map((t) => t.id))}). {when === "auto" ? `At ${fmtT(p.start)} they` : "They"} switch to this too.</div></div>}
+        {clashes.length > 0 && <div className="alert warn"><span className="ico">⏱</span><div><b>{box.name} already has a scheduled change:</b> {clashes.map((i) => `${fmtT(i.runAt)} ${i.label}`).join(", ")}. Both will run in time order.</div></div>}
+        {selected.length > 0 && (
+          <label className="check"><input type="checkbox" checked={withScreens} onChange={(e) => setWithScreens(e.target.checked)} />
+            <span>Also put it on the {selected.length} selected screen{selected.length > 1 ? "s" : ""}<small>{label(m, selected)}</small></span></label>
+        )}
         <div className="actions">
-          {!live && <button className="btn outline" disabled title="Reminders: future feature">Remind me at {fmtT(p.start)}</button>}
-          {!on.length && <button className="btn outline" onClick={async () => { onClose(); await onTuneBox(sug.box.id, c.num); }}>Just tune {sug.box.name}</button>}
-          {selected.length ? (
-            <button className="btn primary" onClick={async () => { onClose(); let box = on[0]; if (!box) { await onTuneBox(sug.box.id, c.num); box = sug.box; } await onSend(selected, box.id); }}>Put on {selected.length} selected screen{selected.length > 1 ? "s" : ""}</button>
-          ) : (
-            <button className="btn primary" onClick={async () => { onClose(); onPick(on[0]?.name || sug.box.name, p.subtitle || title); if (!on.length) await onTuneBox(sug.box.id, c.num); }}>Choose screens…</button>
-          )}
+          {when === "now" && !selected.length && <button className="btn outline" onClick={async () => { onClose(); onPick(box.name, title); if (!boxOnIt) await onTuneBox(box.id, c.num); }}>Tune &amp; choose screens…</button>}
+          <button className="btn primary" disabled={busy || Boolean(dupe) || (when === "now" && boxOnIt && !(withScreens && selected.length))} onClick={() => void go()}>{primary}</button>
         </div>
       </div>
     </div>

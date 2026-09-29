@@ -2,7 +2,7 @@
 // Live sports: games and events grouped by Live now / Starting soon / Later / Replays. Used on the guide page
 // (tap = choose where it goes) and in the box dialog (tap = tune this box).
 import { useState } from "react";
-import { boxById, fmtT, shortCallsign, type Model } from "@/lib/client/model";
+import { boxById, fmtT, schedForProgram, shortCallsign, tuneOf, type Model } from "@/lib/client/model";
 import { minsLeft, screensOn, startsIn, type SportEvent } from "@/lib/client/sports";
 
 // Live broadcasts first; replays and re-airs are folded away at the bottom (they are most of the guide at night).
@@ -28,6 +28,7 @@ export default function SportsList({ m, events, onPick, currentNum, compact, emp
                 const box = boxById(m, e.onBoxes[0]); const scr = screensOn(m, e.onBoxes);
                 const pct = e.p.start <= now ? Math.min(100, Math.max(0, ((now - e.p.start) / (e.p.end - e.p.start)) * 100)) : 0;
                 const cur = currentNum != null && e.channels.some((c) => c.num === currentNum);
+                const sch = schedForProgram(m, e.channels.map((c) => c.num), e.p.start); const schBox = sch ? boxById(m, tuneOf(sch)?.boxId) : null;
                 return (
                   <button key={e.key} className={`scard ${state} ${box ? "onbox" : ""} ${cur ? "cur" : ""}`} style={{ "--c": box?.color || "" } as React.CSSProperties} onClick={() => onPick(e)}
                     aria-label={`${e.matchup}, ${e.league}, ${shortCallsign(e.c.callsign)} ${e.c.num}`}>
@@ -42,6 +43,7 @@ export default function SportsList({ m, events, onPick, currentNum, compact, emp
                     <span className="mu">{e.matchup}</span>
                     <span className="meta">{e.show !== e.matchup ? `${e.show} · ` : ""}{e.p.start <= now ? `ends ${fmtT(e.p.end)} · ${minsLeft(e.p, now)}` : `${fmtT(e.p.start)} – ${fmtT(e.p.end)}`}</span>
                     {box ? <span className="onb">{cur ? "On this box" : `On ${e.onBoxes.map((id) => boxById(m, id)?.name).join(", ")}`}{scr ? ` · ${scr} screen${scr > 1 ? "s" : ""}` : " · no screens"}</span> : cur ? <span className="onb">On this box</span> : null}
+                    {sch && <span className="onb sched">⏱ {schBox?.name || "A box"} changes to it at {fmtT(sch.runAt)}</span>}
                     {e.p.start <= now && <span className="sbar"><i style={{ width: `${pct}%` }} /></span>}
                   </button>
                 );

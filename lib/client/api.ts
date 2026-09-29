@@ -1,6 +1,6 @@
 "use client";
 // Browser-side API access: ?location= and ?token= come from the URL; the token is remembered per device.
-import type { Snapshot } from "@/lib/server/state";
+import type { ScheduleView, Snapshot } from "@/lib/server/state";
 import type { Guide } from "@/lib/server/guide";
 import type { Channel } from "@/lib/server/channels";
 
@@ -52,6 +52,10 @@ export const api = {
   channels: () => getJson<Catalog>("/api/channels"),
   guide: (from: number, hours: number) => getJson<Guide>("/api/guide", { from, hours, filter: "all" }),
   setSource: (tvIds: string[], sourceId: string | null) => postJson<{ success: boolean; results: { tv: string; ok: boolean; error?: string | null }[] }>("/api/tvs/source", { tvIds, sourceId }),
+  schedule: () => getJson<{ items: ScheduleView[] }>("/api/schedule"),
+  scheduleCreate: (b: { runAt: number; actions: ScheduleView["actions"]; label: string; program?: ScheduleView["program"] }) => postJson<{ item: ScheduleView }>("/api/schedule", b),
+  scheduleCancel: (id: string) => postJson<{ success: boolean }>(`/api/schedule/${id}/cancel`, {}),
+  scheduleRun: (id: string) => postJson<{ success: boolean }>(`/api/schedule/${id}/run`, {}),
   setFavorite: (num: number, on: boolean) => postJson<Catalog>("/api/favorites", { num, on }),
   tune: (boxId: string, channel: number) => postJson<{ affectedTvs: string[] }>(`/api/boxes/${boxId}/tune`, { channel }),
   key: (boxId: string, key: string) => postJson<unknown>(`/api/boxes/${boxId}/key`, { key }),
