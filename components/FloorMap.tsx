@@ -50,13 +50,13 @@ export default function FloorMap(props: Props) {
   };
 
   if (mode === "landscape") {
-    // Rotate the plan 90° counter-clockwise: VIP on the left, lanes on the right. Tiles stay upright.
-    const P = (x: number, y: number): [number, number] => [y, MAPW - x]; const TW = 104, TH = 62;
+    // Rotate the plan 90° clockwise: lanes on the left, Neoverse at the bottom, VIP top-right. Tiles stay upright.
+    const P = (x: number, y: number): [number, number] => [MAPH - y, x]; const TW = 104, TH = 62;
     const items = resolveOverlaps(m.tvs.map((t) => { const [cx, cy] = P(t.x + 65, t.y + 35); return { t, cx, cy }; }), TW, TH, 14);
     return (
       <div className="mapwrap"><div className="map card">
         <svg viewBox={`0 0 ${MAPH} ${MAPW}`} preserveAspectRatio="xMidYMid meet" role="group" aria-label="Floor map">
-          <image href={FLOOR} x={0} y={0} width={MAPW} height={MAPH} preserveAspectRatio="none" transform={`matrix(0 -1 1 0 0 ${MAPW})`} />
+          <image href={FLOOR} x={0} y={0} width={MAPW} height={MAPH} preserveAspectRatio="none" transform={`matrix(0 1 -1 0 ${MAPH} 0)`} />
           {zoneLabels(items, TH)}
           {items.map((i) => tile(i.t, i.cx, i.cy, TW, TH, true))}
         </svg>
