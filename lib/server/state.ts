@@ -57,6 +57,7 @@ export class SiteState {
       try {
         const [tvRows, boxRows, wallRows] = await Promise.all([store.loadTvs(this.site.site.slug), store.loadBoxes(this.site.site.slug), this.walls.size ? store.loadWalls(this.site.site.slug) : Promise.resolve([])]);
         for (const r of wallRows) { const w = this.walls.get(r.wall_id); if (!w || w.busy) continue; const at = Date.parse(r.changed_at); if (at >= w.changedAt) { w.mode = (r.mode as any) ?? w.mode; w.sourceId = r.source_id ?? null; w.tileSources = r.tile_sources || {}; w.changedAt = at; } }
+        if (tvRows.length) this.ready = true;
         for (const r of tvRows) { const t = this.tvs.get(r.tv_id); if (!t) continue; const at = Date.parse(r.changed_at); if (!t.lastChange || at >= t.lastChange) { t.sourceId = r.source_id ?? null; if (r.power != null) t.power = r.power; t.lastChange = at; } }
         for (const r of boxRows) { const b = this.boxes.get(r.box_id); if (!b) continue; const at = Date.parse(r.updated_at); if (!b.tuned || at > (b.tuned.at || 0)) { b.online = r.online; b.error = r.error; b.offlineSince = r.offline_since ? Date.parse(r.offline_since) : null; if (r.tuned) b.tuned = r.tuned as TunedView; } }
         this.lastHydrate = Date.now();
@@ -99,7 +100,10 @@ export class SiteState {
       walls: [...this.walls.values()].map((w) => ({ id: w.id, name: w.name, rows: w.rows, mode: w.mode, sourceId: w.sourceId, busy: w.busy, error: w.error })),
     };
   }
-  private emit() { this.events.emit("change", this.snapshot()); }
+  // A fresh instance knows no screen sources until it has read the decoders or the shared store. Until then it stays
+  // quiet: broadcasting its blank floor would wipe every open page to "Off" (seen at Naples on a cold Vercel instance).
+  private ready = cfg.mock;
+  private emit() { if (this.ready) this.events.emit("change", this.snapshot()); }
 
   // ---- Boxes (SHEF) ----
   private applyTuned(box: BoxState, raw: Tuned) {
@@ -458,7 +462,7 @@ export class SiteState {
     // One group command to every decoder: getwindowinfo lists the open windows with the encoder's stream url.
     // (GET /hdtv/status is not usable: it sends encoder-only getters to decoders and fails on the refusal.)
     const decoders = [...this.tvs.values()].filter((t) => t.decoder?.ip);
-    if (!decoders.length) return;
+    if (!decoders.length) { this.ready = true; return; }
     let results: any[] = [];
     try {
       const r = await this.pandora.command(decoders.map((t) => t.decoder.ip), { cmd: "getwindowinfo" });
@@ -481,6 +485,7 @@ export class SiteState {
     }
     if (hasStore() && changed.length) await store.saveTvSources(this.site.site.slug, changed).catch((e) => console.warn("store save failed:", e?.message));
     await this.reconcileWalls(byDecoder, byEncoder, byIp);
+    this.ready = true;
     this.emit();
   }
 

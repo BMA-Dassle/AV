@@ -17,10 +17,11 @@ function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => { const s = document.createElement("script"); s.type = "module"; s.src = src; s.onload = () => { loadedScripts.add(src); resolve(); }; s.onerror = () => reject(new Error("player script")); document.head.appendChild(s); });
 }
 
-export default function Preview({ url, name }: { url: string | null; name: string }) {
+export default function Preview({ url, name, onLive }: { url: string | null; name: string; onLive?: (live: boolean) => void }) {
   const host = useRef<HTMLDivElement>(null);
   const [tag, setTag] = useState(`Preview · ${name}`);
   const [on, setOn] = useState(false);
+  useEffect(() => { onLive?.(on); }, [on, onLive]);
 
   useEffect(() => {
     setOn(false);
@@ -64,7 +65,7 @@ export default function Preview({ url, name }: { url: string | null; name: strin
   return (
     <>
       <div className={`pv ${on ? "on" : ""}`} ref={host} />
-      {on && <span className="live"><i />LIVE</span>}<span className="tag">{tag}</span>
+      {!on && <span className="tag">{tag}</span>}
     </>
   );
 }

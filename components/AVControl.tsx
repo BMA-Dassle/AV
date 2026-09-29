@@ -162,7 +162,7 @@ function App() {
       )}
       <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} onPower={(ids, on) => void setPower(ids, on)} />
       {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover}
-        onTune={async (num) => { setOpenBox(null); setHl(null); await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { setOpenBox(null); setHl(null); await sendKey(openBoxObj.id, k); }} />}
+        onTune={async (num) => { await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { await sendKey(openBoxObj.id, k); }} />}
       {wallPick && (() => { const w = m.walls.find((x) => x.id === wallPick); return w ? <WallDialog m={m} gi={gi} cat={cat} wall={w} onClose={() => setWallPick(null)} onConfirm={(src) => { setWallPick(null); void setWallMode(w.id, "wall", src); }} /> : null; })()}
       {openProg && <ProgramDialog m={m} gi={gi} cat={cat} sel={sel} c={openProg.c} p={openProg.p} onClose={() => setOpenProg(null)} onTuneBox={tuneBox} onSend={applySource}
         onPick={(boxName, title) => { switchTab("tvs"); toast(<>Tap the screens that should show <b>{title}</b>, then pick <b>{boxName}</b> in the bar below.</>, "info"); }} />}

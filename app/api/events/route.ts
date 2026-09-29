@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = withSite(async (req, site) => {
   site.start();
+  await site.ensureFresh();   // the first message is the real floor, never a blank one from a cold instance
   const enc = new TextEncoder();
   let send: ((s: Snapshot) => void) | null = null;
   let ping: NodeJS.Timeout | null = null;

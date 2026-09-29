@@ -12,11 +12,12 @@ const PAD = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClose, onRecover }: { m: Model; gi: GuideIndex; cat: Catalog; box: Box; live: boolean; onTune: (num: number) => void; onKey: (key: string) => void; onClose: () => void; onRecover: RecoverFn }) {
   const [tab, setTab] = useState("fav");
   const [entry, setEntry] = useState("");
+  const [pvLive, setPvLive] = useState(false);
   const feeds = tvsOn(m, box.id); const c = chan(gi, cat, box.channel); const p = boxNow(gi, box);
   const prog = p && p.start && p.end ? Math.min(100, Math.max(0, Math.round((Date.now() - p.start) / (p.end - p.start) * 100))) : 0;
   const all: Channel[] = cat.all.length ? cat.all : (gi.guide?.channels || []).map((g) => ({ num: g.num, callsign: g.callsign, name: g.name, cat: g.cat as Channel["cat"] }));
   const list = tab === "fav" ? (cat.favorites.length ? cat.favorites : all.filter((x) => x.cat === "sports" || x.cat === "local")) : tab === "all" ? all : all.filter((x) => x.cat === tab);
-  const key = (k: string) => { if (k === "bs") setEntry((e) => e.slice(0, -1)); else if (k === "go") { if (entry) onTune(Number(entry)); } else if (entry.length < 4) setEntry((e) => e + k); };
+  const key = (k: string) => { if (k === "bs") setEntry((e) => e.slice(0, -1)); else if (k === "go") { if (entry) { onTune(Number(entry)); setEntry(""); } } else if (entry.length < 4) setEntry((e) => e + k); };
 
   return (
     <div className="overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -32,11 +33,13 @@ export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClos
           <div className="left">
             <div className="preview" style={{ "--c": box.color, "--p": `${prog}%` } as React.CSSProperties} aria-label={`Preview of ${box.name}`}>
               <div className="scene" />
-              <Preview url={box.preview} name={box.name} />
-              <div className="cs">{box.channel ? c.cs : "—"}<small className="num">{box.channel || ""}</small></div>
-              <div className="tt">{p ? <>{p.title}{p.sub ? ` · ${p.sub}` : ""}</> : c.name}</div>
-              <div className="clock num">{fmtT(Date.now())}</div>
-              <div className="bar"><i /></div>
+              <Preview url={box.preview} name={box.name} onLive={setPvLive} />
+              {!pvLive && <>
+                <div className="cs">{box.channel ? c.cs : "—"}<small className="num">{box.channel || ""}</small></div>
+                <div className="tt">{p ? <>{p.title}{p.sub ? ` · ${p.sub}` : ""}</> : c.name}</div>
+                <div className="clock num">{fmtT(Date.now())}</div>
+                <div className="bar"><i /></div>
+              </>}
             </div>
             <div className="now slim">
               <div className="big">{box.channel ? c.cs : "—"}<small className="num">{box.channel || ""}</small></div>
