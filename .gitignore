@@ -11,3 +11,6 @@ research/tvmedia/*.json
 research/tmp.out
 research/*.pid
 .vercel/
+.env.local
+.next/
+next-env.d.ts

@@ -1,27 +1,26 @@
 {
-  "name": "headpinz-tv-control",
-  "version": "0.1.0",
-  "description": "Bartender-friendly TV control for Head Pinz: Pandora HDTV matrix + DirecTV SHEF",
-  "main": "server.js",
-  "directories": {
-    "doc": "docs"
-  },
-  "scripts": {
-    "start": "node server.js",
-    "mock": "node -e \"process.env.MOCK=1;require('./server.js')\"",
-    "build:public": "node scripts/build-mockup.js",
-    "build:mockup": "node scripts/build-mockup.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "dotenv": "^16.6.1",
-    "express": "^4.22.3"
-  },
+  "name": "headpinz-av-control",
+  "version": "0.2.0",
   "private": true,
-  "engines": {
-    "node": ">=18"
-  }
+  "description": "Bartender-facing TV control for HeadPinz / FastTrax venues (Pandora HDTV matrix + DirecTV SHEF + TV Media guide)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "mock": "cross-env MOCK=1 next dev"
+  },
+  "dependencies": {
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.9.2"
+  },
+  "engines": { "node": ">=20" }
 }
