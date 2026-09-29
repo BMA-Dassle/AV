@@ -88,8 +88,16 @@ export class SiteState {
     this.inflight = Promise.all([...this.boxes.values()].map((b) => this.refreshBox(b))).then(() => { this.emit(); }).finally(() => { this.inflight = null; });
     return this.inflight;
   }
-  // Refresh on demand only when the last read is older than the poll interval (serverless hosts have no timer).
-  async ensureFresh() { if (Date.now() - this.lastPoll > cfg.shef.pollMs) await this.refreshAllBoxes(); }
+  // Refresh on demand only when the last read is older than the poll interval. On a serverless host there is no
+  // timer and each instance holds its own copy, so it also re-reads the decoders on the same cadence: every instance
+  // converges on the hardware truth within one interval of any change made through another instance.
+  async ensureFresh() {
+    const stale = Date.now() - this.lastPoll > cfg.shef.pollMs;
+    const jobs: Promise<unknown>[] = [];
+    if (stale) jobs.push(this.refreshAllBoxes());
+    if (!this.timer && Date.now() - this.lastReconcile > cfg.shef.pollMs) jobs.push(this.reconcileTvs());
+    await Promise.all(jobs);
+  }
 
   async tuneBox(boxId: string, channel: unknown) {
     const box = this.boxes.get(boxId);
@@ -215,10 +223,16 @@ export class SiteState {
 
   // Rebuild the TV -> source picture from the decoders (Pandora GET /hdtv/status per decoder) so a restart never shows
   // a blank floor. Each decoder's open window carries the encoder url / devid; match it to a box or source encoder.
-  private reconciled = false;
+  private lastReconcile = 0;
+  private reconciling: Promise<void> | null = null;
   async reconcileTvs() {
-    if (cfg.mock || this.reconciled) return;
-    this.reconciled = true;
+    if (cfg.mock) return;
+    if (this.reconciling) return this.reconciling;
+    this.lastReconcile = Date.now();
+    this.reconciling = this.reconcileNow().finally(() => { this.reconciling = null; });
+    return this.reconciling;
+  }
+  private async reconcileNow() {
     const byEncoder = new Map<string, string>();
     for (const b of this.boxes.values()) if (b.encoder?.ip) byEncoder.set(`${b.encoder.ip}|${b.encoder.devid}`, b.id);
     for (const o of this.others.values()) if (o.encoder?.ip) byEncoder.set(`${o.encoder.ip}|${o.encoder.devid}`, o.id);
