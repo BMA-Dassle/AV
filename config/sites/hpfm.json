@@ -253,7 +253,7 @@
       "id": "web",
       "name": "HeadPinz.com",
       "kind": "web page",
-      "rtsp": ""
+      "rtsp": "rtsp://10.43.61.16:8554/headpinz"
     }
   ],
   "zones": [
