@@ -47,7 +47,11 @@ function App() {
     // Polling fallback when server-sent events are unavailable (serverless hosts): fast enough to feel live.
     const POLL_MS = 3000;
     const startPolling = () => { if (poll) return; poll = setInterval(async () => { try { applySnap(await api.state()); } catch { setLiveDot(false); } }, POLL_MS); };
-    (async () => {
+    // Boot keeps retrying: a cold start or a deploy switch can fail the first request, and a tablet on the bar
+    // should come back by itself instead of sitting on an error until someone reloads it.
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const boot = async () => {
+      if (!alive) return;
       try {
         applySnap(await api.state());
         setStatus("ok");
@@ -61,13 +65,16 @@ function App() {
         } catch { startPolling(); }
         await loadGuide();
       } catch (e: any) {
-        setStatus(e?.status === 401 ? "unauthorized" : e?.status === 404 ? "badlocation" : "down");
+        const st = e?.status === 401 ? "unauthorized" : e?.status === 404 ? "badlocation" : "down";
+        setStatus(st);
+        if (st === "down") retry = setTimeout(boot, 4000);
       }
-    })();
+    };
+    void boot();
     const g = setInterval(loadGuide, 10 * 60000);
     const t = setInterval(() => { setClock(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })); const gs = halfHourFloor(Date.now()); setGridStart((cur) => (cur === gs ? cur : gs)); }, 1000);
     try { const saved = localStorage.getItem("hp-tab"); if (saved === "guide") setTab("guide"); } catch { /* private mode */ }
-    return () => { alive = false; es?.close(); if (poll) clearInterval(poll); clearInterval(g); clearInterval(t); };
+    return () => { alive = false; clearTimeout(retry); es?.close(); if (poll) clearInterval(poll); clearInterval(g); clearInterval(t); };
   }, [applySnap, loadGuide]);
 
   const switchTab = (t: "tvs" | "guide") => { setTab(t); try { localStorage.setItem("hp-tab", t); } catch { /* private mode */ } };
@@ -139,7 +146,7 @@ function App() {
 
   if (status === "unauthorized") return <Shell clock={clock} tab={tab} onTab={switchTab} locs={locs} m={m} liveDot={false}><div className="alert warn" style={{ marginTop: 20 }}><span className="ico">⚠</span><div><b>Sign-in required.</b> Open this page with the link that includes the access token.</div></div></Shell>;
   if (status === "badlocation") return <Shell clock={clock} tab={tab} onTab={switchTab} locs={locs} m={m} liveDot={false}><div className="alert warn" style={{ marginTop: 20 }}><span className="ico">⚠</span><div><b>Unknown location.</b> Check the location in the address bar.</div></div></Shell>;
-  if (status === "down") return <Shell clock={clock} tab={tab} onTab={switchTab} locs={locs} m={m} liveDot={false}><div className="alert warn" style={{ marginTop: 20 }}><span className="ico">⚠</span><div><b>The control service is not responding.</b> Try again in a moment.</div></div></Shell>;
+  if (status === "down") return <Shell clock={clock} tab={tab} onTab={switchTab} locs={locs} m={m} liveDot={false}><div className="alert warn" style={{ marginTop: 20 }}><span className="ico">⚠</span><div><b>Can't reach the control service.</b> Reconnecting automatically…</div></div></Shell>;
 
   const openBoxObj = openBox ? boxById(m, openBox) : null;
   return (
