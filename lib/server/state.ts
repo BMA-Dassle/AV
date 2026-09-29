@@ -237,6 +237,7 @@ export class SiteState {
     let targets = tvIds.map((id) => this.tvs.get(id)).filter((t): t is TvState => Boolean(t));
     if (!targets.length) throw new HttpError("No TVs given", 400);
     const results: { tv: string; ok: boolean; error?: string | null }[] = [];
+    if (!opts.viaWall) await this.hydrate(true);   // the wall guard below needs the shared wall state, not this instance's memory
     // Screens of a wall that is showing one picture: the whole wall selected changes the wall; part of it is refused.
     if (!opts.viaWall) {
       for (const w of this.walls.values()) {
@@ -391,6 +392,10 @@ export class SiteState {
   async setWallMode(wallId: string, mode: "wall" | "screens", sourceId?: string | null) {
     const w = this.walls.get(wallId); if (!w) throw new HttpError(`Unknown wall ${wallId}`, 404);
     if (w.busy) throw new HttpError(`${w.name} is already switching`, 409);
+    // Act on what the wall is doing now, not on this instance's memory: a cold instance knew nothing about the
+    // wall, restored "nothing" to all six screens and blanked Video Wall 1 (first live split, 2026-09-29).
+    await this.hydrate(true);
+    if (!cfg.mock) await this.reconcileTvs();
     const tiles = this.wallTiles(w); const ips = this.wallIps(w);
     const [tw, th] = w.tile; const rows = w.rows.length, cols = w.rows[0].length;
     // the source the wall ends up on: asked for, else what the wall had, else what most of its screens show
@@ -414,7 +419,9 @@ export class SiteState {
         w.mode = "wall"; w.busy = false;
         if (src) await this.setWallSource(w.id, src); else { w.sourceId = null; this.persistWall(w); }
       } else {
-        const back = Object.fromEntries(tiles.map((t) => [t.id, w.tileSources[t.id] ?? w.sourceId ?? t.sourceId ?? null]));
+        // each screen goes back to what it showed before the wall, else the wall's picture; never to "off"
+        const wallPic = w.sourceId ?? common;
+        const back = Object.fromEntries(tiles.map((t) => [t.id, w.tileSources[t.id] ?? wallPic ?? t.sourceId ?? null]));
         if (!cfg.mock) {
           await this.groupCommand(ips, { cmd: "deletewall", id: w.wallId });
           await this.groupCommand(ips, { cmd: "newmatrix" });
@@ -423,7 +430,7 @@ export class SiteState {
         w.mode = "screens"; w.busy = false; w.sourceId = null;
         // put every screen straight back on a picture (grouped by source) so the wall is never left blank
         const bySource = new Map<string | null, string[]>(); for (const [id, s] of Object.entries(back)) bySource.set(s, [...(bySource.get(s) || []), id]);
-        for (const [s, ids] of bySource) await this.setTvSource(ids, s, { viaWall: true, audio: false });
+        for (const [s, ids] of bySource) if (s) await this.setTvSource(ids, s, { viaWall: true, audio: false });
         this.persistWall(w);
       }
       this.log("wall.mode", { wall: w.id, mode, sourceId: w.sourceId });
@@ -510,7 +517,18 @@ export class SiteState {
     }
   }
 
-  start() { if (this.timer) return; void this.hydrate(true).then(() => this.refreshAllBoxes()); void this.reconcileTvs(); this.timer = setInterval(() => this.refreshAllBoxes(), cfg.shef.pollMs); this.timer.unref?.(); }
+  // Each tick also pulls the shared store, and re-reads the decoders every 30 s: an instance holding a live feed open
+  // must not keep broadcasting its own old picture of the floor (Video Wall 1 flipped back to "Wall" that way).
+  start() {
+    if (this.timer) return;
+    void this.hydrate(true).then(() => this.refreshAllBoxes()); void this.reconcileTvs();
+    this.timer = setInterval(async () => {
+      await this.hydrate();
+      if (!cfg.mock && Date.now() - this.lastReconcile > 30000) void this.reconcileTvs();
+      await this.refreshAllBoxes();
+    }, cfg.shef.pollMs);
+    this.timer.unref?.();
+  }
 }
 
 // Module-level singleton so API routes share state within a process (Next dev/prod server, or a warm serverless instance).
