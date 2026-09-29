@@ -16,7 +16,8 @@ export type PlanPanel = { id: string; name?: string; x0: number; y0: number; x1:
 export type PlanConfig = { panels: PlanPanel[]; tile: [number, number]; landscape?: "row" | "stack" };
 // A source is an AV-over-IP encoder, or any RTSP stream the receivers pull directly (window type 2), e.g. the
 // web-page streamer in streamer/ (rtsp://<pc>:8554/headpinz). An RTSP source with an empty url is hidden.
-export type SourceConfig = { id: string; name: string; kind: string; encoder?: Encoder; rtsp?: string };
+// protocol: how the receiver pulls it (vendor openwindow "protocol": 0 multicast, 1 tcp, 2 udp unicast); RTSP defaults to 1.
+export type SourceConfig = { id: string; name: string; kind: string; encoder?: Encoder; rtsp?: string; protocol?: 0 | 1 | 2 };
 export type ZoneConfig = { id: string; name: string };
 export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string; nodeId?: string | number; legacyDeviceId?: number };
   // Power control of the display itself (projectors). Optional; TVs without it have no power buttons.

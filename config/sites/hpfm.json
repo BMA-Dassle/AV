@@ -254,6 +254,12 @@
       "name": "HeadPinz.com",
       "kind": "web page",
       "rtsp": "rtsp://10.43.61.16:8554/headpinz"
+    },
+    {
+      "id": "web-test",
+      "name": "HeadPinz.com (laptop test)",
+      "kind": "web page",
+      "rtsp": "rtsp://10.90.0.218:8554/headpinz"
     }
   ],
   "zones": [

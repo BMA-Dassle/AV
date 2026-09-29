@@ -246,9 +246,9 @@ export class SiteState {
 
   // ---- TVs (Pandora HDTV) ----
   // What to hand Pandora for a source: an encoder, or an RTSP url for stream sources.
-  private sourceSpec(sourceId: string): { encoder: Encoder } | { rtspUrl: string } {
+  private sourceSpec(sourceId: string): { encoder: Encoder } | { rtspUrl: string; protocol: 0 | 1 | 2 } {
     const o = this.others.get(sourceId);
-    if (o?.rtsp) return { rtspUrl: o.rtsp };
+    if (o?.rtsp) return { rtspUrl: o.rtsp, protocol: o.protocol ?? 1 };   // RTSP over TCP unless the site file says otherwise
     return { encoder: this.encoderFor(sourceId) };
   }
   private isStream(sourceId: string) { return Boolean(this.others.get(sourceId)?.rtsp); }
