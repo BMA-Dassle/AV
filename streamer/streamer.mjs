@@ -37,7 +37,7 @@ const C = {
   bitrate: String(opt("bitrate", "8M")),               // 8 Mbps keeps small text crisp at 1080p; 4K: ~20M with h265
   codec: String(opt("codec", "h264")),              // h264 | h265
   profile: String(opt("profile", "high")),          // h264 profile: baseline | main | high
-  audio: opt("audio", "0") === "1",                 // add a silent AAC track (some receivers want one)
+  audio: opt("audio", "1") !== "0",                 // silent AAC 48 kHz stereo track, like the encoders send; the receivers show white without it. --audio=0 to drop
   streamPath: String(opt("name", "headpinz")).replace(/[^\w.-]/g, ""),   // rtsp://<pc>:8554/<name>
   rtspPort: Number(opt("rtsp-port", 8554)),
   statusPort: Number(opt("status-port", 8090)),

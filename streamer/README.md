@@ -40,7 +40,7 @@ Pass them to `start.cmd` as `--name=value`, or set them as `STREAM_NAME` environ
 | `profile` | high | H.264 profile: baseline, main or high |
 | `preset` | veryfast | encoder speed; `faster` or `medium` look slightly sharper but need more CPU |
 | `quality` | 95 | JPEG quality of captured frames |
-| `audio` | 0 | `1` adds a silent AAC track, for receivers that expect audio |
+| `audio` | 1 | silent AAC 48 kHz stereo track, matching the encoders; the receivers stayed white without it. `0` drops it |
 | `name` | headpinz | stream path: `rtsp://pc:8554/<name>` |
 | `rtsp-port` / `status-port` | 8554 / 8090 | |
 | `css` | | extra CSS, for example to hide a cookie banner |
