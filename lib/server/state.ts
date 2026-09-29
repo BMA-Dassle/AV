@@ -74,11 +74,12 @@ export class SiteState {
   private locationID() { return this.site.site.squareLocationIDs?.[0] || this.site.site.slug; }
   private friendly(e: any) { const m = String(e?.message || e); return /aborted|abort/i.test(m) ? "no response (timed out)" : /ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|fetch failed/i.test(m) ? "unreachable" : /Pandora 404/.test(m) ? "Pandora has no DirecTV endpoints yet (waiting for the Pandora release)" : /Pandora 401/.test(m) ? "Pandora rejected the token" : m; }
 
-  // Direct-from-LAN preview stream for a box: an explicit URL per box, or <gateway>/api/stream.mp4?src=<boxId>
-  // when the site has a preview gateway (go2rtc). The page connects to it itself; nothing goes through Pandora.
+  // Preview stream for a box: an explicit URL per box, else <gateway>/api/ws?src=<encoder ip> where the gateway is
+  // PREVIEW_GATEWAY, else the site's previewGateway (an on-site go2rtc), else Pandora's hosted one at <PANDORA_BASE>/preview.
   private previewUrl(b: BoxState): string | null {
     if (b.preview) return b.preview;
-    const gw = process.env.PREVIEW_GATEWAY || this.site.site.previewGateway;   // env override for a local gateway test
+    const own = process.env.PREVIEW_GATEWAY || this.site.site.previewGateway;
+    const gw = own && !/REPLACE_WITH/.test(own) ? own : cfg.mock ? "" : `${cfg.pandora.baseUrl.replace(/\/$/, "")}/preview`;
     // Streams are addressed by the encoder's IP (Pandora's gateway maps it to rtsp://<ip>:8554/ch0/2; docs/go2rtc.yaml uses the same names).
     if (gw && !/REPLACE_WITH/.test(gw) && b.encoder?.ip) return `${gw.replace(/\/$/, "")}/api/ws?src=${encodeURIComponent(b.encoder.ip)}`;
     return null;
@@ -287,9 +288,19 @@ export class SiteState {
   async retryBox(boxId: string) {
     const box = this.boxes.get(boxId);
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
-    if (this.via === "pandora") { try { await this.pandora.directvDiscover(this.locationID()); } catch { /* discovery is best effort */ } }
+    // A box that got a new address from DHCP: sweep the site's subnets for its receiverId and follow it.
+    let moved: string | null = null;
+    const subnets = this.site.site.directvSubnets || [];
+    if (this.via === "pandora" && box.receiverId && subnets.length) {
+      try {
+        const r = await this.pandora.directvDiscover(subnets, [{ id: box.id, receiverId: box.receiverId }]);
+        const d = r?.data ?? r; const norm = (s: unknown) => String(s ?? "").replace(/\D/g, "");
+        const hit = (d?.receivers || []).find((x: any) => x.boxId === box.id || norm(x.receiverId) === norm(box.receiverId));
+        if (hit?.ip && box.shef && hit.ip !== box.shef.ip) { moved = hit.ip; this.log("box.moved", { box: box.id, from: box.shef.ip, to: hit.ip }); box.shef.ip = hit.ip; }
+      } catch { /* discovery is best effort */ }
+    }
     await this.refreshOne(box);
-    return { box: box.id, online: box.online, error: box.error };
+    return { box: box.id, online: box.online, error: box.error, movedTo: moved };
   }
   // Power-cycle through a switched outlet (PDU / smart plug) configured per box: either one cycleUrl, or offUrl + onUrl with a delay.
   async powerCycle(boxId: string) {
@@ -332,7 +343,7 @@ export class SiteState {
       try {
         if (cfg.projectorVia === "mock") await new Promise((r) => setTimeout(r, 300));
         else if (cfg.projectorVia === "direct") await projector.power(d, on);
-        else await this.pandora.projectorPower(this.locationID(), d.ip, on, d.protocol, d.port);
+        else await this.pandora.projectorPower(d.ip, on, d.protocol, d.port);
         t.power = on; t.error = null;
         return { tv: t.id, ok: true };
       } catch (e: any) { t.error = this.friendly(e); return { tv: t.id, ok: false, error: t.error }; }

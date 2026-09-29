@@ -1,5 +1,7 @@
 # Box preview: direct from the venue LAN
 
+**Update 2026-09-29: Pandora hosts the gateway** (v2.4.106): go2rtc inside the Pandora container at `/v2/preview`, reaching the encoders over Pandora's own LAN access. With no `PREVIEW_GATEWAY` and no `site.previewGateway`, the app now uses `<PANDORA_BASE>/preview/api/ws?src=<encoder ip>`, so previews work from any network without an on-site service. The player runs MSE only (no WebRTC on App Service) and video only: the encoders advertise AAC but send none, and asking for audio stalls go2rtc's MP4 muxer. Keep the default ch0/2 stream; ch0/0 and ch0/1 are H.265 and most browsers refuse them. An on-site go2rtc (below) still works as an override.
+
 The box dialog shows a live picture of what a DirecTV box is putting out. That stream never goes through Pandora: the tablet connects straight to an on-site gateway, tries three times, and falls back to the placeholder card when it cannot connect (off-site, gateway down, or a wrong URL).
 
 ## Why a gateway

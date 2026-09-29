@@ -37,13 +37,14 @@ export interface PandoraClient {
   directvBoxes(locationID: string): Promise<any>;
   directvTune(locationID: string, boxId: string, major: number): Promise<any>;
   directvKey(locationID: string, boxId: string, key: string): Promise<any>;
-  directvDiscover(locationID: string): Promise<any>;
+  // Stateless sweep: which of these receivers answer where (Pandora stores nothing)
+  directvDiscover(subnets: string[], receivers: { id: string; receiverId: string }[]): Promise<any>;
   // Raw-ip variants: work without a registry (the app knows the addresses from its site file)
   directvTuned(ip: string, clientAddr?: string): Promise<any>;
   directvTuneIp(ip: string, major: number, clientAddr?: string): Promise<any>;
   directvKeyIp(ip: string, key: string, clientAddr?: string): Promise<any>;
-  // Projector power through Pandora (spec section 12)
-  projectorPower(locationID: string, ip: string, on: boolean, protocol?: string, port?: number): Promise<any>;
+  // Projector power through Pandora (stateless, spec section 12)
+  projectorPower(ip: string, on: boolean, protocol?: string, port?: number): Promise<any>;
   projectorStatus(ip: string, protocol?: string, port?: number): Promise<any>;
 }
 
@@ -60,10 +61,10 @@ export const pandora: PandoraClient = {
   directvBoxes: (locationID) => call("GET", `/directv/boxes/${locationID}`),
   directvTune: (locationID, boxId, major) => call("POST", "/directv/tune", { body: { locationID, boxId, major } }),
   directvKey: (locationID, boxId, key) => call("POST", "/directv/key", { body: { locationID, boxId, key, hold: "keyPress" } }),
-  directvDiscover: (locationID) => call("POST", `/directv/discover/${locationID}`),
+  directvDiscover: (subnets, receivers) => call("POST", "/directv/discover", { body: { subnets, receivers } }),
   directvTuned: (ip, clientAddr = "0") => call("GET", `/directv/tuned/${ip}`, { query: { clientAddr } }),
   directvTuneIp: (ip, major, clientAddr = "0") => call("POST", "/directv/tune", { body: { ip, major, clientAddr } }),
   directvKeyIp: (ip, key, clientAddr = "0") => call("POST", "/directv/key", { body: { ip, key, hold: "keyPress", clientAddr } }),
-  projectorPower: (locationID, ip, on, protocol = "optoma", port) => call("POST", "/projector/power", { body: { locationID, ip, on, protocol, ...(port ? { port } : {}) } }),
+  projectorPower: (ip, on, protocol = "optoma", port) => call("POST", "/projector/power", { body: { ip, on, protocol, ...(port ? { port } : {}) } }),
   projectorStatus: (ip, protocol = "optoma", port) => call("GET", `/projector/status/${ip}`, { query: { protocol, port: port ? String(port) : undefined } }),
 };

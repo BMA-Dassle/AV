@@ -1,7 +1,7 @@
 "use client";
 // Box preview direct from the venue LAN with retries; placeholder when unreachable (docs/PREVIEW-GATEWAY.md).
 // A go2rtc gateway URL (…/api/stream.mp4?src=NAME) is played through go2rtc's own <video-stream> element over
-// WebSocket (MSE, then WebRTC), which is the path the encoders' RTSP works with. Any other URL plays in a plain
+// WebSocket (MSE, video only), which is the path the encoders' RTSP works with. Pandora hosts one at /v2/preview. Any other URL plays in a plain
 // <video> (or <img> for MJPEG / snapshots).
 import { useEffect, useRef, useState } from "react";
 
@@ -38,11 +38,13 @@ export default function Preview({ url, name }: { url: string | null; name: strin
       if (g) {
         try { await loadScript(`${g.base}/video-stream.js`); } catch { fail(); return; }
         if (!alive) return;
-        const vs = document.createElement("video-stream") as HTMLElement & { src?: string; mode?: string; background?: boolean };
+        // go2rtc's player takes its options as properties (attributes are ignored), and connects when src is set.
+        // MSE only (Pandora has no WebRTC), video only: the encoders advertise AAC but send none, and go2rtc's
+        // MP4 muxer waits for every negotiated track, so asking for audio means no picture.
+        const vs = document.createElement("video-stream") as HTMLElement & { src?: string; mode?: string; media?: string; background?: boolean };
         vs.className = "pvmedia";
-        vs.setAttribute("mode", "mse,webrtc,hls");
-        vs.setAttribute("background", "");
-        vs.setAttribute("src", `${g.base.replace(/^http/, "ws")}/api/ws?src=${encodeURIComponent(g.name)}`);
+        vs.mode = "mse"; vs.media = "video"; vs.background = true;
+        vs.src = `${g.base.replace(/^http/, "ws")}/api/ws?src=${encodeURIComponent(g.name)}`;
         el = vs; host.current?.appendChild(vs);
         // the element creates its own <video>; first frame = playing
         const watch = () => { const v = vs.querySelector("video"); if (v) { v.muted = true; v.addEventListener("playing", ok, { once: true }); v.addEventListener("error", fail, { once: true }); if (!v.paused && v.readyState >= 2) ok(); } else if (!settled) setTimeout(watch, 200); };

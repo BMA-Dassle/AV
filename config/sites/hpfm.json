@@ -8,7 +8,7 @@
     ],
     "guideLineup": "36463D",
     "timezone": "America/New_York",
-    "previewGateway": "http://REPLACE_WITH_ONSITE_GATEWAY:1984",
+    "previewGateway": "",
     "legacyControllerBase": "http://10.43.60.245",
     "directvSubnets": [
       "10.43.60.0/24"
