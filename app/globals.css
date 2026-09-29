@@ -96,6 +96,19 @@ main{flex:1;min-height:0;overflow:auto;padding:16px;padding-bottom:calc(150px + 
 
 /* ---- floor map: the venue drawing at full page width, TVs at their real positions; the page scrolls, the map never does ---- */
 .panels{display:flex;flex-direction:column;gap:12px}
+/* video walls on the floor plan */
+.map .wframe{fill:rgba(59,130,246,.06);stroke:rgba(147,197,253,.55);stroke-width:2.5;stroke-dasharray:10 6}
+.map .wname{fill:#93c5fd;font-size:18px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;paint-order:stroke;stroke:rgba(14,23,41,.9);stroke-width:5px}
+.map .wsw{cursor:pointer}
+.map .wsw rect{fill:#223452;stroke:#3c4b66;stroke-width:1.5}
+.map .wsw text{fill:#98a2b3;font-size:15px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.map .wsw.on rect{fill:rgba(59,130,246,.35);stroke:#3b82f6}
+.map .wsw.on text{fill:#fff}
+.map .wsw.dis{cursor:default;opacity:.5}
+.map .mtv.wallpic .cs{font-size:40px}
+.map .mtv.wallpic .nm{font-size:18px}
+.map .wbusy{fill:rgba(14,23,41,.72)}
+.map .wbusy+text{fill:#fff;font-size:22px;font-weight:600;text-anchor:middle;dominant-baseline:central}
 .panel .ptl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-foreground);margin:0 0 6px 2px}
 .mapwrap{margin-bottom:6px}
 .zoomctl{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -148,6 +161,7 @@ main{flex:1;min-height:0;overflow:auto;padding:16px;padding-bottom:calc(150px + 
 .srcbtn .a small{font-size:11px;color:var(--muted-foreground);font-weight:500;margin-left:5px}
 .srcbtn .b{font-size:11px;color:var(--muted-foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srcbtn.cur{opacity:.5}
+.srcbtn.picked{border-color:#3b82f6;background:rgba(59,130,246,.2);box-shadow:0 0 0 1px #3b82f6}
 .srcbtn.off{border-color:hsl(0 84% 60% / .35)} .srcbtn.off::before{background:var(--destructive)} .srcbtn.off .a{color:var(--red-400)}
 
 /* ---- buttons (shadcn Button) ---- */

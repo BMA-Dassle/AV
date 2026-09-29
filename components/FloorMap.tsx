@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { chan, srcColor, srcName, type Model, type Tv, type GuideIndex } from "@/lib/client/model";
+import { chan, srcColor, srcName, type Model, type Tv, type GuideIndex, type Wall } from "@/lib/client/model";
 import { centre, codeName, layoutMode, panelOf, resolveOverlaps, shortName, zoneBox, type LayoutMode, type Placed } from "@/lib/client/floor";
 import type { Catalog } from "@/lib/client/api";
 import type { PlanPanel } from "@/lib/server/config";
@@ -8,6 +8,7 @@ import type { PlanPanel } from "@/lib/server/config";
 type Props = {
   m: Model; gi: GuideIndex; cat: Catalog; sel: Set<string>; hl: string | null; busy: Set<string>;
   zoneZoom: string | null; onToggle: (id: string) => void; onZone: (zone: string | null) => void; onZoneAll: (zone: string) => void;
+  onWallMode: (wallId: string, mode: "wall" | "screens") => void; onWallSelect: (wallId: string) => void;
 };
 
 // The panel's background drawing, in plan units.
@@ -53,9 +54,50 @@ export default function FloorMap(props: Props) {
 
   const csSize = (cs: string, TW: number) => (cs.length <= 4 ? 21 : cs.length <= 6 ? 17 : cs.length <= 8 ? 14 : 12) * (TW / 104);
   const zoneLabels = (items: Placed[], TH: number) => m.zones.map((z) => {
-    const its = items.filter((i) => i.t.zone === z.id); if (!its.length) return null;
+    const its = items.filter((i) => i.t.zone === z.id); if (!its.length || its.every((i) => i.t.wallId)) return null;
     const x = its.reduce((s, i) => s + i.cx, 0) / its.length; const y = Math.min(...its.map((i) => i.cy)) - TH / 2 - 12;
     return <text key={z.id} className="zl" x={x} y={y} textAnchor="middle">{z.name}</text>;
+  });
+  // ---- video walls: a frame with the wall's name and a Wall | Screens switch; in Wall mode one merged tile ----
+  const wallMode = (t: Tv) => (t.wallId ? m.walls.find((w) => w.id === t.wallId)?.mode === "wall" : false);
+  const wallBox = (w: Wall, items: Placed[], TW: number, TH: number) => {
+    const its = items.filter((i) => i.t.wallId === w.id); if (!its.length) return null;
+    const pad = 10, head = 40;
+    const x0 = Math.min(...its.map((i) => i.cx)) - TW / 2, x1 = Math.max(...its.map((i) => i.cx)) + TW / 2;
+    const y0 = Math.min(...its.map((i) => i.cy)) - TH / 2, y1 = Math.max(...its.map((i) => i.cy)) + TH / 2;
+    return { its, x0, x1, y0, y1, fx0: x0 - pad, fy0: y0 - pad - head, fx1: x1 + pad, fy1: y1 + pad, head };
+  };
+  const wallFrames = (items: Placed[], TW: number, TH: number) => m.walls.map((w) => {
+    const b = wallBox(w, items, TW, TH); if (!b) return null;
+    return <rect key={`f-${w.id}`} className="wframe" x={b.fx0} y={b.fy0} width={b.fx1 - b.fx0} height={b.fy1 - b.fy0} rx={12} />;
+  });
+  const wallOverlays = (items: Placed[], TW: number, TH: number) => m.walls.map((w) => {
+    const b = wallBox(w, items, TW, TH); if (!b) return null;
+    const tiles = w.rows.flat(); const allSel = tiles.every((id) => sel.has(id));
+    const src = w.sourceId; const box = m.boxes.find((x) => x.id === src);
+    const cs = box ? (box.channel ? chan(gi, cat, box.channel).cs : box.name) : src ? srcName(m, src) : "Off";
+    const bw = 104, bh = 28, gap = 6; const bx = b.fx1 - 10 - (bw * 2 + gap), by = b.fy0 + 7;
+    const sw = (mode: "wall" | "screens", label: string, x: number) => {
+      const on = w.mode === mode; const dis = w.busy || on;
+      return <g key={mode} className={`wsw ${on ? "on" : ""} ${w.busy ? "dis" : ""}`} role="button" aria-pressed={on} aria-label={`${w.name}: ${label}`} onClick={() => { if (!dis) props.onWallMode(w.id, mode); }}><rect x={x} y={by} width={bw} height={bh} rx={7} /><text x={x + bw / 2} y={by + bh / 2}>{label}</text></g>;
+    };
+    return (
+      <g key={`o-${w.id}`}>
+        <text className="wname" x={b.fx0 + 12} y={b.fy0 + 27}>{w.name}</text>
+        {sw("wall", "Wall", bx)}{sw("screens", "Screens", bx + bw + gap)}
+        {w.mode === "wall" && (
+          <g className={`mtv wallpic ${allSel ? "sel" : ""} ${hl && src !== hl ? "dimmed" : ""} ${src ? "" : "off"}`} style={{ "--c": srcColor(m, src) } as React.CSSProperties} transform={`translate(${b.x0},${b.y0})`}
+            tabIndex={0} role="button" aria-pressed={allSel} aria-label={`${w.name}, one picture`} onClick={() => props.onWallSelect(w.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); props.onWallSelect(w.id); } }}>
+            <rect className="b" width={b.x1 - b.x0} height={b.y1 - b.y0} />
+            <text className="cs" x={b.x1 - b.x0 - 16} y={52}>{cs}</text>
+            <text className="nm" x={14} y={b.y1 - b.y0 - 16}>{`One picture on ${tiles.length} screens`}</text>
+            <g className="chk" transform="translate(8,8)"><circle r={9} cx={9} cy={9} fill="#3b82f6" /><path d="M4.5 9.5l3 3L13.5 6.5" stroke="#fff" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" /></g>
+          </g>
+        )}
+        {w.busy && <g><rect className="wbusy" x={b.fx0} y={b.fy0 + b.head} width={b.fx1 - b.fx0} height={b.fy1 - b.fy0 - b.head} rx={10} /><text x={(b.fx0 + b.fx1) / 2} y={(b.fy0 + b.head + b.fy1) / 2}>Switching…</text></g>}
+        {w.error && !w.busy && <text x={b.fx0 + 12} y={b.fy1 + 20} style={{ fill: "#f87171", fontSize: 14 }}>{w.error.slice(0, 90)}</text>}
+      </g>
+    );
   });
   const tile = (t: Tv, cx: number, cy: number, TW: number, TH: number, short: boolean) => {
     const b = m.boxes.find((x) => x.id === t.src);
@@ -99,7 +141,9 @@ export default function FloorMap(props: Props) {
                 <svg viewBox={v.viewBox} preserveAspectRatio="xMidYMid meet" role="group" aria-label={p.name || "Floor map"} style={row ? undefined : { maxWidth: v.VW, margin: "0 auto" }}>
                   {v.img}
                   {zoneLabels(items, TH)}
-                  {items.map((i) => tile(i.t, i.cx, i.cy, TW, TH, short))}
+                  {wallFrames(items, TW, TH)}
+                  {items.filter((i) => !wallMode(i.t)).map((i) => tile(i.t, i.cx, i.cy, TW, TH, short))}
+                  {wallOverlays(items, TW, TH)}
                 </svg>
               </div></div>
             </div>
@@ -129,7 +173,9 @@ export default function FloorMap(props: Props) {
           <svg viewBox={`${bb.x0} ${bb.y0} ${bb.x1 - bb.x0} ${bb.y1 - bb.y0}`} preserveAspectRatio="xMidYMid meet" role="group" aria-label={`${z.name} screens`}>
             <PanelImage p={panel} />
             {ghosts.map((t) => { const [cx, cy] = centre(m, t); return <g key={t.id} className="dot dimmed" style={{ "--c": srcColor(m, t.src) } as React.CSSProperties} transform={`translate(${cx},${cy})`} onClick={() => props.onZone(t.zone)}><circle r={22} /><text>{codeName(t)}</text></g>; })}
-            {items.map((i) => tile(i.t, i.cx, i.cy, TW, TH, false))}
+            {wallFrames(items, TW, TH)}
+            {items.filter((i) => !wallMode(i.t)).map((i) => tile(i.t, i.cx, i.cy, TW, TH, false))}
+            {wallOverlays(items, TW, TH)}
           </svg>
         </div>
       </div>

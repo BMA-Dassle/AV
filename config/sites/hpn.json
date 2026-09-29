@@ -1060,5 +1060,55 @@
         "legacyDeviceId": 76
       }
     }
+  ],
+  "walls": [
+    {
+      "id": "wall1",
+      "name": "Video Wall 1",
+      "wallId": 1,
+      "rows": [
+        [
+          "nemos-1",
+          "nemos-2",
+          "nemos-3"
+        ],
+        [
+          "nemos-4",
+          "nemos-5",
+          "nemos-6"
+        ]
+      ],
+      "tile": [
+        1920,
+        1080
+      ],
+      "hz": 60,
+      "multiaddr": "239.1.1.1",
+      "multPort": 1100
+    },
+    {
+      "id": "wall2",
+      "name": "Video Wall 2",
+      "wallId": 45,
+      "rows": [
+        [
+          "nemos-19",
+          "nemos-20",
+          "nemos-21"
+        ],
+        [
+          "nemos-22",
+          "nemos-23",
+          "nemos-24"
+        ]
+      ],
+      "tile": [
+        1920,
+        1080
+      ],
+      "hz": 60,
+      "multiaddr": "239.1.1.45",
+      "multPort": 1100
+    }
   ]
 }

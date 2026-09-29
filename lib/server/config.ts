@@ -19,9 +19,12 @@ export type ZoneConfig = { id: string; name: string };
 export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string; nodeId?: string | number; legacyDeviceId?: number };
   // Power control of the display itself (projectors). Optional; TVs without it have no power buttons.
   display?: { kind: "projector" | "tv"; protocol?: "optoma" | "pjlink"; ip: string; port?: number; legacyDeviceId?: number } };
+// A video wall: decoders in a grid showing either one picture across all of them ("wall") or independent pictures ("screens").
+// wallId, grid and multicast group are what the nodes store (newwall); see docs/VIDEO-WALLS.md.
+export type WallConfig = { id: string; name: string; wallId: number; rows: string[][]; tile: [number, number]; hz?: number; multiaddr?: string; multPort?: number };
 export type SiteConfig = {
   site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; guideLineup?: string; timezone?: string; previewGateway?: string; directvSubnets?: string[]; legacyControllerBase?: string; notes?: string; map?: PlanConfig };
-  boxes: BoxConfig[]; otherSources: SourceConfig[]; zones: ZoneConfig[]; tvs: TvConfig[];
+  boxes: BoxConfig[]; otherSources: SourceConfig[]; zones: ZoneConfig[]; tvs: TvConfig[]; walls?: WallConfig[];
 };
 
 export const sites: SiteConfig[] = [hpfm, ft, hpn].map((s) => s as unknown as SiteConfig);

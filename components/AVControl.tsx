@@ -10,6 +10,7 @@ import SelectionBar from "./SelectionBar";
 import BoxDialog from "./BoxDialog";
 import { GuideGrid, ProgramDialog } from "./GuidePage";
 import { OfflineBanner } from "./Recovery";
+import WallDialog from "./WallDialog";
 
 export default function AVControl() { return <ToastProvider><App /></ToastProvider>; }
 
@@ -105,6 +106,24 @@ function App() {
     } catch (e: any) { toast(<>Power: {e?.message}</>, "error"); }
     try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
   };
+  // ---- video walls ----
+  const [wallPick, setWallPick] = useState<string | null>(null);
+  const setWallMode = async (wallId: string, mode: "wall" | "screens", sourceId?: string | null) => {
+    const w = mRef.current.walls.find((x) => x.id === wallId); if (!w) return;
+    toast(<>{w.name}: {mode === "wall" ? "switching to one picture…" : "splitting into separate screens…"}</>, "info");
+    try {
+      const r = await api.wallMode(wallId, mode, sourceId);
+      const b = boxById(mRef.current, r.sourceId);
+      toast(mode === "wall" ? <>{w.name} now shows <b>{b ? (b.channel ? chan(gi, cat, b.channel).cs : b.name) : srcName(mRef.current, r.sourceId)}</b> across all {w.rows.flat().length} screens.</> : <>{w.name} is now {w.rows.flat().length} separate screens, each still on its picture. Tap a screen to change it.</>);
+    } catch (e: any) { toast(<>{w.name}: {e?.message}</>, "error"); }
+    try { applySnap(await api.state()); } catch { /* SSE will catch up */ }
+  };
+  const onWallMode = (wallId: string, mode: "wall" | "screens") => { if (mode === "wall") setWallPick(wallId); else void setWallMode(wallId, "screens"); };
+  const onWallSelect = (wallId: string) => {
+    const w = mRef.current.walls.find((x) => x.id === wallId); if (!w) return;
+    const tiles = w.rows.flat();
+    setSel((s) => { const all = tiles.every((id) => s.has(id)); const n = new Set(s); tiles.forEach((id) => (all ? n.delete(id) : n.add(id))); return n; }); setHl(null);
+  };
   const onBoxCard = (id: string) => { if (sel.size) void applySource([...sel], id); else { setHl(id); setOpenBox(id); } };
   const recover = async (boxId: string, action: "retry" | "wake" | "cycle" | "move", toBoxId?: string) => {
     const b = boxById(mRef.current, boxId); if (!b) return;
@@ -132,7 +151,7 @@ function App() {
           <OfflineBanner m={m} onOpen={(id) => { setHl(id); setOpenBox(id); }} onRecover={recover} />
           <BoxesStrip m={m} gi={gi} cat={cat} armed={sel.size > 0} hl={hl} onBox={onBoxCard} />
           <div className="sec"><h2>Floor plan</h2><span className="hint">Tap screens on the plan, then pick what they show</span></div>
-          <FloorMap m={m} gi={gi} cat={cat} sel={sel} hl={hl} busy={busy} zoneZoom={zoneZoom} onToggle={toggleTv} onZone={setZoneZoom} onZoneAll={zoneAll} />
+          <FloorMap m={m} gi={gi} cat={cat} sel={sel} hl={hl} busy={busy} zoneZoom={zoneZoom} onToggle={toggleTv} onZone={setZoneZoom} onZoneAll={zoneAll} onWallMode={onWallMode} onWallSelect={onWallSelect} />
           <div className="foot"><span>Boxes: DirecTV SHEF <code>/tv/getTuned</code> every 10 s</span><span>Screens: Pandora <code>POST /hdtv/source</code></span></div>
         </section>
       ) : (
@@ -144,6 +163,7 @@ function App() {
       <SelectionBar m={m} gi={gi} cat={cat} sel={sel} onClear={() => setSel(new Set())} onPick={(src) => void applySource([...sel], src)} onPower={(ids, on) => void setPower(ids, on)} />
       {openBoxObj && <BoxDialog m={m} gi={gi} cat={cat} box={openBoxObj} live={!m.site || true} onClose={() => { setOpenBox(null); setHl(null); }} onRecover={recover}
         onTune={async (num) => { setOpenBox(null); setHl(null); await tuneBox(openBoxObj.id, num); }} onKey={async (k) => { setOpenBox(null); setHl(null); await sendKey(openBoxObj.id, k); }} />}
+      {wallPick && (() => { const w = m.walls.find((x) => x.id === wallPick); return w ? <WallDialog m={m} gi={gi} cat={cat} wall={w} onClose={() => setWallPick(null)} onConfirm={(src) => { setWallPick(null); void setWallMode(w.id, "wall", src); }} /> : null; })()}
       {openProg && <ProgramDialog m={m} gi={gi} cat={cat} sel={sel} c={openProg.c} p={openProg.p} onClose={() => setOpenProg(null)} onTuneBox={tuneBox} onSend={applySource}
         onPick={(boxName, title) => { switchTab("tvs"); toast(<>Tap the screens that should show <b>{title}</b>, then pick <b>{boxName}</b> in the bar below.</>, "info"); }} />}
     </Shell>

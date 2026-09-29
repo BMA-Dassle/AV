@@ -41,6 +41,8 @@ The page stores the token after the first visit, so tablets only need the token 
 | POST | `/tvs/source` | `{ tvIds, sourceId | null }` |
 | POST | `/boxes/:id/tune` | `{ channel }` |
 | POST | `/boxes/:id/key` | `{ key }` (SHEF key names) |
+| POST | `/walls/:id/mode` | `{ mode: wall \| screens, sourceId? }` (video walls; docs/VIDEO-WALLS.md) |
+| POST | `/walls/:id/source` | `{ sourceId }` (wall showing one picture) |
 | POST | `/boxes/:id/recover` | `{ action: retry \| wake \| cycle \| move, toBoxId? }` |
 | GET | `/guide?from=&hours=&filter=` | Programs per channel for the site's lineup. |
 | GET/POST | `/admin/...` | Decoder status, AV scan, SHEF diagnostics. |

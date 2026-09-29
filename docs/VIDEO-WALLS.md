@@ -1,4 +1,6 @@
-# Video walls (HeadPinz Naples): findings and feature plan
+# Video walls (HeadPinz Naples): findings, design and implementation
+
+**Status 2026-09-29: built.** Routes `POST /api/walls/:id/mode` and `/api/walls/:id/source`, wall detection in the reconcile, floor-plan frame with a Wall | Screens switch, source picker, whole-wall selection. Tested in mock mode end to end, and detection verified read-only against both real Naples walls. Not yet exercised live: an actual mode switch from the app (do the first one at a quiet time on Video Wall 1). Wall 2's multicast group is inferred as 239.1.1.45 (Allonis used 239.1.1.1 for wall id 1); confirm on its first switch.
 
 Written 2026-09-29 for Eric and whoever builds this. Findings are read-only observations of the Naples Allonis controller (10.40.60.245) and of the wall decoders through Pandora production.
 
@@ -137,4 +139,4 @@ If one tile's decoder fails during a wall change, the wall shows a warning badge
 | 5–6. Floor-plan wall group, mode switch, guide target | half a day |
 | Test at Naples, quiet hour, one wall | 30 min |
 
-Until this ships, the app treats the 12 wall screens as ordinary screens. Picking a source for one tile while a wall is in Full mode puts a full-screen window on that tile, leaving the other five still spanning. So don't use the app on the walls at Naples until this lands.
+Shipped: selecting part of a wall that is showing one picture is refused with a clear message; selecting the whole wall changes the wall.

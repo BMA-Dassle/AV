@@ -27,6 +27,7 @@ export function ensureSchema() {
       await q`CREATE TABLE IF NOT EXISTS av_box_state (site text NOT NULL, box_id text NOT NULL, online boolean, error text, offline_since timestamptz, tuned jsonb, updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (site, box_id))`;
       await q`CREATE TABLE IF NOT EXISTS av_activity (id bigserial PRIMARY KEY, site text NOT NULL, at timestamptz NOT NULL DEFAULT now(), action text NOT NULL, detail jsonb)`;
       await q`CREATE INDEX IF NOT EXISTS av_activity_site_at ON av_activity (site, at DESC)`;
+      await q`CREATE TABLE IF NOT EXISTS av_wall_state (site text NOT NULL, wall_id text NOT NULL, mode text, source_id text, tile_sources jsonb, changed_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (site, wall_id))`;
     })().catch((e) => { ready = null; throw e; });
   }
   return ready;
@@ -55,6 +56,14 @@ export const store = {
     await ensureSchema();
     const q = client();
     for (const r of rows) await q`INSERT INTO av_box_state (site, box_id, online, error, offline_since, tuned, updated_at) VALUES (${site}, ${r.boxId}, ${r.online}, ${r.error}, ${r.offlineSince ? new Date(r.offlineSince).toISOString() : null}, ${JSON.stringify(r.tuned ?? null)}::jsonb, now()) ON CONFLICT (site, box_id) DO UPDATE SET online = EXCLUDED.online, error = EXCLUDED.error, offline_since = EXCLUDED.offline_since, tuned = EXCLUDED.tuned, updated_at = now()`;
+  },
+  async loadWalls(site: string): Promise<{ wall_id: string; mode: string | null; source_id: string | null; tile_sources: Record<string, string | null> | null; changed_at: string }[]> {
+    await ensureSchema();
+    return (await client()`SELECT wall_id, mode, source_id, tile_sources, changed_at FROM av_wall_state WHERE site = ${site}`) as any;
+  },
+  async saveWall(site: string, w: { wallId: string; mode: string | null; sourceId: string | null; tileSources: Record<string, string | null> }) {
+    await ensureSchema();
+    await client()`INSERT INTO av_wall_state (site, wall_id, mode, source_id, tile_sources, changed_at) VALUES (${site}, ${w.wallId}, ${w.mode}, ${w.sourceId}, ${JSON.stringify(w.tileSources)}::jsonb, now()) ON CONFLICT (site, wall_id) DO UPDATE SET mode = EXCLUDED.mode, source_id = EXCLUDED.source_id, tile_sources = EXCLUDED.tile_sources, changed_at = now()`;
   },
   async log(site: string, action: string, detail: unknown) {
     try { await ensureSchema(); await client()`INSERT INTO av_activity (site, action, detail) VALUES (${site}, ${action}, ${JSON.stringify(detail ?? null)}::jsonb)`; } catch { /* logging never blocks control */ }

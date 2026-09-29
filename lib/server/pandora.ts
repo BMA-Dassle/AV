@@ -25,7 +25,7 @@ const target = (ips: string[]) => (ips.length === 1 ? { ip: ips[0] } : { ips });
 const base = (ips: string[], extra: Record<string, unknown>) => ({ transport: cfg.pandora.transport, ...target(ips), ...extra });
 
 export interface PandoraClient {
-  putSource(p: { ips: string[]; encoder?: Encoder; rtspUrl?: string; audio?: boolean; vol?: number; windowId?: number }): Promise<any>;
+  putSource(p: { ips: string[]; encoder?: Encoder; rtspUrl?: string; audio?: boolean; vol?: number; windowId?: number; geometry?: { x: number; y: number; width: number; height: number } }): Promise<any>;
   closeAll(p: { ips: string[] }): Promise<any>;
   setVolume(p: { ips: string[]; vol: number }): Promise<any>;
   status(ip: string): Promise<any>;
@@ -49,8 +49,8 @@ export interface PandoraClient {
 
 export const pandora: PandoraClient = {
   // Put an encoder (a DirecTV box's encoder, music, signage) full screen on decoders and open its audio on the same window.
-  putSource: ({ ips, encoder, rtspUrl, audio = true, vol, windowId = 0 }) =>
-    call("POST", "/hdtv/source", { body: base(ips, { windowId, ...(encoder ? { encoder } : { rtspUrl }), audio, ...(vol != null ? { vol } : {}) }) }),
+  putSource: ({ ips, encoder, rtspUrl, audio = true, vol, windowId = 0, geometry }) =>
+    call("POST", "/hdtv/source", { body: base(ips, { windowId, ...(encoder ? { encoder } : { rtspUrl }), audio, ...(vol != null ? { vol } : {}), ...(geometry || {}) }) }),
   closeAll: ({ ips }) => call("POST", "/hdtv/window/close", { body: base(ips, { all: true }) }),
   setVolume: ({ ips, vol }) => call("POST", "/hdtv/audio/volume", { body: base(ips, { vol }) }),
   status: (ip) => call("GET", `/hdtv/status/${ip}`, { query: { transport: cfg.pandora.transport } }),

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { boxNow, chan, fmtT, progAt, tvsOn, type Box, type GuideIndex, type Model } from "@/lib/client/model";
+import { boxNow, chan, fmtT, groupNames, progAt, tvsOn, type Box, type GuideIndex, type Model } from "@/lib/client/model";
 import type { Catalog } from "@/lib/client/api";
 import type { Channel } from "@/lib/server/channels";
 import Preview from "./Preview";
@@ -46,7 +46,7 @@ export default function BoxDialog({ m, gi, cat, box, live, onTune, onKey, onClos
             {box.online === false && <RecoveryPanel m={m} box={box} onRecover={onRecover} />}
             {feeds.length ? (
               <div className="alert warn"><span className="ico">⚠</span><div><b>Feeds {feeds.length} screen{feeds.length > 1 ? "s" : ""}.</b> Changing the channel changes all of them.
-                <div className="feeds">{feeds.map((t) => <span key={t.id} className="pill">{t.name}</span>)}</div></div></div>
+                <div className="feeds">{groupNames(m, feeds.map((t) => t.id)).map((n) => <span key={n} className="pill">{n}</span>)}</div></div></div>
             ) : (
               <div className="alert ok"><span className="ico">✓</span><div><b>No screens are watching this box.</b> Safe to change.</div></div>
             )}

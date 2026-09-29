@@ -1,7 +1,7 @@
 // In-memory model of one location's floor: which source is on each TV, what each DirecTV box is tuned to.
 // One instance per site, kept as a module singleton (per process; on a serverless host it starts cold per instance).
 import { EventEmitter } from "events";
-import { cfg, findSite, sites, HttpError, type SiteConfig, type BoxConfig, type TvConfig, type Encoder, type PlanConfig } from "./config";
+import { cfg, findSite, sites, HttpError, type SiteConfig, type BoxConfig, type TvConfig, type Encoder, type PlanConfig, type WallConfig } from "./config";
 import { findChannel } from "./channels";
 import { makeMockPandora, makeMockShef, SEED_TVS } from "./mock";
 import { pandora as realPandora, type PandoraClient } from "./pandora";
@@ -11,20 +11,23 @@ import { hasStore, store } from "./store";
 
 export type TunedView = { channel: number; minor: number | null; callsign: string; channelName: string; title: string; episodeTitle: string; startTime: number | null; duration: number | null; isRecording: boolean; at: number; pending?: boolean };
 export type BoxView = { id: string; name: string; color: string; receiverId: string | null; online: boolean | null; error: string | null; offlineSince: number | null; tuned: TunedView | null; tvCount: number; configured: boolean; preview: string | null; powerControl: boolean };
-export type TvView = { id: string; name: string; zone: string; map?: [number, number]; sourceId: string | null; lastChange: number | null; error: string | null; configured: boolean; display: { kind: string; power: boolean | null } | null };
+export type TvView = { id: string; name: string; zone: string; map?: [number, number]; sourceId: string | null; lastChange: number | null; error: string | null; configured: boolean; display: { kind: string; power: boolean | null } | null; wallId: string | null };
+export type WallView = { id: string; name: string; rows: string[][]; mode: "wall" | "screens" | null; sourceId: string | null; busy: boolean; error: string | null };
 export type Snapshot = {
   site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; timezone: string; mock: boolean; time: number; plan: PlanConfig };
-  zones: { id: string; name: string }[]; tvs: TvView[]; boxes: BoxView[]; otherSources: { id: string; name: string; kind: string; tvCount: number }[];
+  zones: { id: string; name: string }[]; tvs: TvView[]; boxes: BoxView[]; otherSources: { id: string; name: string; kind: string; tvCount: number }[]; walls: WallView[];
 };
 
 type TvState = TvConfig & { sourceId: string | null; lastChange: number | null; error: string | null; power: boolean | null };
 type BoxState = BoxConfig & { tuned: TunedView | null; online: boolean | null; error: string | null; offlineSince: number | null };
+type WallState = WallConfig & { mode: "wall" | "screens" | null; sourceId: string | null; tileSources: Record<string, string | null>; busy: boolean; error: string | null; changedAt: number };
 
 export class SiteState {
   readonly events = new EventEmitter();
   private tvs: Map<string, TvState>;
   private boxes: Map<string, BoxState>;
   private others: Map<string, SiteConfig["otherSources"][number]>;
+  private walls: Map<string, WallState>;
   readonly pandora: PandoraClient;
   private shef: ShefClient;
   private via: "pandora" | "shef" | "mock";
@@ -35,6 +38,8 @@ export class SiteState {
     this.tvs = new Map(site.tvs.map((t) => [t.id, { ...t, sourceId: cfg.mock ? SEED_TVS[t.id] ?? null : null, lastChange: null, error: null, power: t.display ? (cfg.mock ? true : null) : null }]));
     this.boxes = new Map(site.boxes.map((b) => [b.id, { ...b, tuned: null, online: null, error: null, offlineSince: null }]));
     this.others = new Map(site.otherSources.map((s) => [s.id, s]));
+    this.walls = new Map((site.walls || []).map((w) => [w.id, { ...w, mode: cfg.mock ? "wall" : null, sourceId: cfg.mock ? site.boxes[1]?.id ?? null : null, tileSources: {}, busy: false, error: null, changedAt: 0 }]));
+    if (cfg.mock) for (const w of this.walls.values()) for (const id of w.rows.flat()) { const t = this.tvs.get(id); if (t) t.sourceId = w.sourceId; }
     this.pandora = cfg.mock ? makeMockPandora() : realPandora;
     this.via = cfg.directvVia;
     this.shef = this.via === "mock" ? makeMockShef(site.boxes) : realShef;
@@ -50,7 +55,8 @@ export class SiteState {
     if (this.hydrating) return this.hydrating;
     this.hydrating = (async () => {
       try {
-        const [tvRows, boxRows] = await Promise.all([store.loadTvs(this.site.site.slug), store.loadBoxes(this.site.site.slug)]);
+        const [tvRows, boxRows, wallRows] = await Promise.all([store.loadTvs(this.site.site.slug), store.loadBoxes(this.site.site.slug), this.walls.size ? store.loadWalls(this.site.site.slug) : Promise.resolve([])]);
+        for (const r of wallRows) { const w = this.walls.get(r.wall_id); if (!w || w.busy) continue; const at = Date.parse(r.changed_at); if (at >= w.changedAt) { w.mode = (r.mode as any) ?? w.mode; w.sourceId = r.source_id ?? null; w.tileSources = r.tile_sources || {}; w.changedAt = at; } }
         for (const r of tvRows) { const t = this.tvs.get(r.tv_id); if (!t) continue; const at = Date.parse(r.changed_at); if (!t.lastChange || at >= t.lastChange) { t.sourceId = r.source_id ?? null; if (r.power != null) t.power = r.power; t.lastChange = at; } }
         for (const r of boxRows) { const b = this.boxes.get(r.box_id); if (!b) continue; const at = Date.parse(r.updated_at); if (!b.tuned || at > (b.tuned.at || 0)) { b.online = r.online; b.error = r.error; b.offlineSince = r.offline_since ? Date.parse(r.offline_since) : null; if (r.tuned) b.tuned = r.tuned as TunedView; } }
         this.lastHydrate = Date.now();
@@ -79,7 +85,7 @@ export class SiteState {
   }
 
   snapshot(): Snapshot {
-    const tvs = [...this.tvs.values()].map((t) => ({ id: t.id, name: t.name, zone: t.zone, map: t.map, sourceId: t.sourceId, lastChange: t.lastChange, error: t.error, configured: Boolean(t.decoder?.ip) || cfg.mock, display: t.display ? { kind: t.display.kind, power: t.power } : null }));
+    const tvs = [...this.tvs.values()].map((t) => ({ id: t.id, name: t.name, zone: t.zone, map: t.map, sourceId: t.sourceId, lastChange: t.lastChange, error: t.error, configured: Boolean(t.decoder?.ip) || cfg.mock, display: t.display ? { kind: t.display.kind, power: t.power } : null, wallId: this.wallOf(t.id)?.id ?? null }));
     const counts: Record<string, number> = {};
     for (const t of tvs) if (t.sourceId) counts[t.sourceId] = (counts[t.sourceId] || 0) + 1;
     const s = this.site.site;
@@ -89,6 +95,7 @@ export class SiteState {
       tvs,
       boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || this.via !== "shef", preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),
       otherSources: [...this.others.values()].map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
+      walls: [...this.walls.values()].map((w) => ({ id: w.id, name: w.name, rows: w.rows, mode: w.mode, sourceId: w.sourceId, busy: w.busy, error: w.error })),
     };
   }
   private emit() { this.events.emit("change", this.snapshot()); }
@@ -221,10 +228,22 @@ export class SiteState {
   }
   private decoderIp(t: TvState) { return t.decoder?.ip || `mock-${t.id}`; }
 
-  async setTvSource(tvIds: string[], sourceId: string | null, opts: { audio?: boolean; vol?: number } = {}) {
-    const targets = tvIds.map((id) => this.tvs.get(id)).filter((t): t is TvState => Boolean(t));
+  async setTvSource(tvIds: string[], sourceId: string | null, opts: { audio?: boolean; vol?: number; viaWall?: boolean } = {}) {
+    let targets = tvIds.map((id) => this.tvs.get(id)).filter((t): t is TvState => Boolean(t));
     if (!targets.length) throw new HttpError("No TVs given", 400);
     const results: { tv: string; ok: boolean; error?: string | null }[] = [];
+    // Screens of a wall that is showing one picture: the whole wall selected changes the wall; part of it is refused.
+    if (!opts.viaWall) {
+      for (const w of this.walls.values()) {
+        if (w.mode !== "wall") continue;
+        const tiles = w.rows.flat(); const picked = targets.filter((t) => tiles.includes(t.id));
+        if (!picked.length) continue;
+        targets = targets.filter((t) => !tiles.includes(t.id));
+        if (picked.length === tiles.length) { results.push(...(await this.setWallSource(w.id, sourceId))); }
+        else for (const t of picked) results.push({ tv: t.id, ok: false, error: `part of ${w.name}, which is showing one picture; change the whole wall or switch it to separate screens` });
+      }
+      if (!targets.length) { this.emit(); return results; }
+    }
     const ready = targets.filter((t) => cfg.mock || t.decoder?.ip);
     for (const t of targets) if (!ready.includes(t)) { t.error = "no decoder configured"; results.push({ tv: t.id, ok: false, error: t.error }); }
     if (sourceId === null) {
@@ -325,6 +344,80 @@ export class SiteState {
     return results;
   }
 
+  // ---- Video walls ----
+  wallOf(tvId: string): WallState | null { for (const w of this.walls.values()) if (w.rows.some((r) => r.includes(tvId))) return w; return null; }
+  private persistWall(w: WallState) {
+    if (hasStore()) store.saveWall(this.site.site.slug, { wallId: w.id, mode: w.mode, sourceId: w.sourceId, tileSources: w.tileSources }).catch((e) => console.warn("store saveWall failed:", e?.message));
+  }
+  private wallTiles(w: WallState) { return w.rows.flat().map((id) => this.tvs.get(id)).filter((t): t is TvState => Boolean(t)); }
+  private wallIps(w: WallState) { return this.wallTiles(w).map((t) => this.decoderIp(t)); }
+  private async groupCommand(ips: string[], payload: Record<string, unknown>) {
+    try { await this.pandora.command(ips, payload); }
+    catch (e: any) { const bad = (e?.body?.error?.results || []).filter((x: any) => !x.ok).map((x: any) => x.ip); throw new HttpError(`${payload.cmd} failed on ${bad.join(", ") || "the wall"}: ${e?.message}`, 502); }
+  }
+
+  // One picture across the whole wall: every node gets the same window, the size of the wall; each crops its own slice.
+  async setWallSource(wallId: string, sourceId: string | null): Promise<{ tv: string; ok: boolean; error?: string | null }[]> {
+    const w = this.walls.get(wallId); if (!w) throw new HttpError(`Unknown wall ${wallId}`, 404);
+    if (w.mode !== "wall") throw new HttpError(`${w.name} is showing separate screens; pick screens individually or switch it to one picture`, 409);
+    const tiles = this.wallTiles(w); const ips = this.wallIps(w);
+    const geometry = { x: 0, y: 0, width: w.rows[0].length * w.tile[0], height: w.rows.length * w.tile[1] };
+    if (sourceId === null) await this.pandora.closeAll({ ips });
+    else await this.pandora.putSource({ ips, encoder: this.encoderFor(sourceId), audio: false, geometry });
+    for (const t of tiles) { t.sourceId = sourceId; t.lastChange = Date.now(); t.error = null; }
+    w.sourceId = sourceId; w.changedAt = Date.now(); w.error = null;
+    if (hasStore()) await store.saveTvSources(this.site.site.slug, tiles.map((t) => ({ tvId: t.id, sourceId }))).catch(() => {});
+    this.persistWall(w); this.log("wall.source", { wall: w.id, sourceId }); this.emit();
+    return tiles.map((t) => ({ tv: t.id, ok: true }));
+  }
+
+  // Switch a wall between one picture ("wall") and independent screens ("screens"), without leaving it blank.
+  // Commands mirror what the Allonis driver sends (captured live, docs/VIDEO-WALLS.md), but all nodes at once.
+  async setWallMode(wallId: string, mode: "wall" | "screens", sourceId?: string | null) {
+    const w = this.walls.get(wallId); if (!w) throw new HttpError(`Unknown wall ${wallId}`, 404);
+    if (w.busy) throw new HttpError(`${w.name} is already switching`, 409);
+    const tiles = this.wallTiles(w); const ips = this.wallIps(w);
+    const [tw, th] = w.tile; const rows = w.rows.length, cols = w.rows[0].length;
+    // the source the wall ends up on: asked for, else what the wall had, else what most of its screens show
+    const counts: Record<string, number> = {}; for (const t of tiles) if (t.sourceId) counts[t.sourceId] = (counts[t.sourceId] || 0) + 1;
+    const common = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    w.busy = true; w.error = null; this.emit();
+    try {
+      if (mode === "wall") {
+        const src = sourceId !== undefined ? sourceId : w.sourceId ?? common;
+        w.tileSources = Object.fromEntries(tiles.map((t) => [t.id, t.sourceId]));   // remembered for switching back
+        if (!cfg.mock) {
+          await this.groupCommand(ips, { cmd: "deletewall" });
+          const allres = w.rows.flatMap((r, ri) => r.map((_, ci) => ({ row: ri, col: ci, width: tw, height: th })));
+          await Promise.all(tiles.map(async (t) => {
+            const ri = w.rows.findIndex((r) => r.includes(t.id)); const ci = w.rows[ri].indexOf(t.id); const ip = this.decoderIp(t);
+            await this.groupCommand([ip], { cmd: "newwall", id: w.wallId, rows, cols, row: ri, col: ci, w: tw, h: th, hz: w.hz ?? 60, ledw: cols * tw, ledh: rows * th, type: 0, timing: 0, multiaddr: w.multiaddr ?? `239.1.1.${w.wallId}`, multPort: w.multPort ?? 1100, allres });
+            await this.groupCommand([ip], { cmd: "setprotocol", protocol: 0 });
+            await this.groupCommand([ip], { cmd: "setstreamdelay", streamdelay: 80000 });
+          }));
+        } else await new Promise((r) => setTimeout(r, 1200));
+        w.mode = "wall"; w.busy = false;
+        if (src) await this.setWallSource(w.id, src); else { w.sourceId = null; this.persistWall(w); }
+      } else {
+        const back = Object.fromEntries(tiles.map((t) => [t.id, w.tileSources[t.id] ?? w.sourceId ?? t.sourceId ?? null]));
+        if (!cfg.mock) {
+          await this.groupCommand(ips, { cmd: "deletewall", id: w.wallId });
+          await this.groupCommand(ips, { cmd: "newmatrix" });
+          await this.groupCommand(ips, { chn: 0, cmd: "setvoattr", width: tw, height: th, hz: w.hz ?? 60 });
+        } else await new Promise((r) => setTimeout(r, 600));
+        w.mode = "screens"; w.busy = false; w.sourceId = null;
+        // put every screen straight back on a picture (grouped by source) so the wall is never left blank
+        const bySource = new Map<string | null, string[]>(); for (const [id, s] of Object.entries(back)) bySource.set(s, [...(bySource.get(s) || []), id]);
+        for (const [s, ids] of bySource) await this.setTvSource(ids, s, { viaWall: true, audio: false });
+        this.persistWall(w);
+      }
+      this.log("wall.mode", { wall: w.id, mode, sourceId: w.sourceId });
+      return { wall: w.id, mode: w.mode, sourceId: w.sourceId };
+    } catch (e: any) {
+      w.error = e?.message || String(e); throw e;
+    } finally { w.busy = false; w.changedAt = Date.now(); this.emit(); }
+  }
+
   async tvStatus(tvId: string) {
     const t = this.tvs.get(tvId);
     if (!t) throw new HttpError(`Unknown TV ${tvId}`, 404);
@@ -376,7 +469,29 @@ export class SiteState {
       if (src !== t.sourceId) { t.sourceId = src; t.lastChange = Date.now(); changed.push({ tvId: t.id, sourceId: src }); }
     }
     if (hasStore() && changed.length) await store.saveTvSources(this.site.site.slug, changed).catch((e) => console.warn("store save failed:", e?.message));
+    await this.reconcileWalls(byDecoder, byEncoder, byIp);
     this.emit();
+  }
+
+  // A wall is in "wall" mode when every node stores this wall (getwall: id, rows, cols) and shows one window the size of the wall.
+  private async reconcileWalls(windows: Map<any, any>, byEncoder: Map<string, string>, byIp: Map<string, string>) {
+    for (const w of this.walls.values()) {
+      if (w.busy) continue;
+      const tiles = w.rows.flat().map((id) => this.tvs.get(id)).filter((t): t is TvState => Boolean(t?.decoder?.ip));
+      if (!tiles.length) continue;
+      let walls: any[] = [];
+      try { const r = await this.pandora.command(tiles.map((t) => t.decoder.ip), { cmd: "getwall" }); walls = r?.data?.results || []; }
+      catch (e: any) { walls = e?.body?.error?.results || []; }
+      const byNode = new Map(walls.map((x: any) => [x.ip, x]));
+      const inWall = tiles.every((t) => { const x = byNode.get(t.decoder.ip); return x?.ok && Number(x.reply?.id) === w.wallId && Number(x.reply?.rows) === w.rows.length; });
+      const ledw = w.rows[0].length * w.tile[0];
+      const wins = tiles.map((t) => windows.get(t.decoder.ip)?.reply?.data?.list?.[0]);
+      const spanning = wins.every((x) => x && Number(x.width) === ledw);
+      const mode: "wall" | "screens" = inWall ? "wall" : "screens";
+      let src: string | null = null;
+      if (inWall && spanning) { const ip = String(wins[0].url || "").split(":")[0]; src = byEncoder.get(`${ip}|${wins[0].devid}`) || byIp.get(ip) || null; }
+      if (mode !== w.mode || (mode === "wall" && src !== w.sourceId)) { w.mode = mode; if (mode === "wall") w.sourceId = src; w.changedAt = Date.now(); this.persistWall(w); }
+    }
   }
 
   start() { if (this.timer) return; void this.hydrate(true).then(() => this.refreshAllBoxes()); void this.reconcileTvs(); this.timer = setInterval(() => this.refreshAllBoxes(), cfg.shef.pollMs); this.timer.unref?.(); }
