@@ -72,5 +72,9 @@ export function makeMockPandora(): PandoraClient {
     async status() { await delay(50); return { success: true, data: { id: 1, input: { width: 1920, height: 1080, fps: 60, status: 1 }, windows: [], audio: { url: "", vol: 60, status: 1, mute: 0, id: 0 }, ops: { cpu: "12%" } } }; },
     async scan() { await delay(1500); return { success: true, data: { method: "multicast", count: 0, devices: [], scannedAt: new Date().toISOString() } }; },
     async devices() { return { success: true, data: { method: "none", count: 0, devices: [] } }; },
+    async directvBoxes() { return { success: true, data: { boxes: [] } }; },
+    async directvTune() { return { success: true, data: {} }; },
+    async directvKey() { return { success: true, data: {} }; },
+    async directvDiscover() { return { success: true, data: { receivers: [] } }; },
   };
 }

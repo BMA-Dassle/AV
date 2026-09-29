@@ -10,7 +10,7 @@
     "timezone": "America/New_York",
     "previewGateway": "",
     "directvSubnets": [],
-    "notes": "TODO: TV list with zones and plan positions, DirecTV boxes (receiverId), encoders, subnet. Same building as HPFM; confirm whether it shares the AV matrix and boxes."
+    "notes": "TODO: TV list with zones and plan positions, floor plan image, DirecTV boxes (receiverId), encoders, subnet. Separate building from HPFM: its own AV matrix, boxes and Q-SYS Core."
   },
   "boxes": [],
   "otherSources": [],

@@ -31,6 +31,11 @@ const tokens = (process.env.APP_TOKENS || process.env.APP_TOKEN || "").split(","
 
 export const cfg = {
   mock: process.env.MOCK === "1" || process.env.MOCK === "true",
+  // How the app reads and controls the DirecTV boxes:
+  //   pandora  through Pandora /v2/directv/* (the only option from a cloud host; needs the Pandora DirecTV release)
+  //   shef     straight to the boxes on port 8080 (an on-site host only)
+  //   mock     simulated boxes (lets the matrix run live while Pandora's DirecTV endpoints are not deployed yet)
+  directvVia: (process.env.DIRECTV_VIA || (process.env.MOCK === "1" || process.env.MOCK === "true" ? "mock" : "pandora")) as "pandora" | "shef" | "mock",
   auth: { tokens, required: tokens.length > 0 },
   pandora: {
     baseUrl: process.env.PANDORA_BASE || "https://bma-pandora-api.azurewebsites.net/v2",

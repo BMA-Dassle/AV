@@ -31,6 +31,11 @@ export interface PandoraClient {
   status(ip: string): Promise<any>;
   scan(locationID: string, method?: string): Promise<any>;
   devices(locationID: string): Promise<any>;
+  // DirecTV boxes through Pandora (spec: docs/PANDORA-DIRECTV-SPEC.md, sections 4, 8, 10)
+  directvBoxes(locationID: string): Promise<any>;
+  directvTune(locationID: string, boxId: string, major: number): Promise<any>;
+  directvKey(locationID: string, boxId: string, key: string): Promise<any>;
+  directvDiscover(locationID: string): Promise<any>;
 }
 
 export const pandora: PandoraClient = {
@@ -42,4 +47,8 @@ export const pandora: PandoraClient = {
   status: (ip) => call("GET", `/hdtv/status/${ip}`, { query: { transport: cfg.pandora.transport } }),
   scan: (locationID, method = "auto") => call("POST", "/hdtv/scan", { body: { locationID, method } }),
   devices: (locationID) => call("GET", `/hdtv/devices/${locationID}`),
+  directvBoxes: (locationID) => call("GET", `/directv/boxes/${locationID}`),
+  directvTune: (locationID, boxId, major) => call("POST", "/directv/tune", { body: { locationID, boxId, major } }),
+  directvKey: (locationID, boxId, key) => call("POST", "/directv/key", { body: { locationID, boxId, key, hold: "keyPress" } }),
+  directvDiscover: (locationID) => call("POST", `/directv/discover/${locationID}`),
 };

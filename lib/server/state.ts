@@ -5,7 +5,7 @@ import { cfg, findSite, sites, HttpError, type SiteConfig, type BoxConfig, type 
 import { findChannel } from "./channels";
 import { makeMockPandora, makeMockShef, SEED_TVS } from "./mock";
 import { pandora as realPandora, type PandoraClient } from "./pandora";
-import { shef as realShef, type ShefClient } from "./shef";
+import { shef as realShef, type ShefClient, type Tuned } from "./shef";
 
 export type TunedView = { channel: number; minor: number | null; callsign: string; channelName: string; title: string; episodeTitle: string; startTime: number | null; duration: number | null; isRecording: boolean; at: number; pending?: boolean };
 export type BoxView = { id: string; name: string; color: string; receiverId: string | null; online: boolean | null; error: string | null; offlineSince: number | null; tuned: TunedView | null; tvCount: number; configured: boolean; preview: string | null; powerControl: boolean };
@@ -25,6 +25,7 @@ export class SiteState {
   private others: Map<string, SiteConfig["otherSources"][number]>;
   readonly pandora: PandoraClient;
   private shef: ShefClient;
+  private via: "pandora" | "shef" | "mock";
   private timer: NodeJS.Timeout | null = null;
 
   constructor(readonly site: SiteConfig) {
@@ -33,10 +34,13 @@ export class SiteState {
     this.boxes = new Map(site.boxes.map((b) => [b.id, { ...b, tuned: null, online: null, error: null, offlineSince: null }]));
     this.others = new Map(site.otherSources.map((s) => [s.id, s]));
     this.pandora = cfg.mock ? makeMockPandora() : realPandora;
-    this.shef = cfg.mock ? makeMockShef(site.boxes) : realShef;
+    this.via = cfg.directvVia;
+    this.shef = this.via === "mock" ? makeMockShef(site.boxes) : realShef;
   }
 
-  private shefIp(b: BoxState) { return cfg.mock ? `mock:${b.id}` : b.shef?.ip; }
+  private shefIp(b: BoxState) { return this.via === "mock" ? `mock:${b.id}` : b.shef?.ip; }
+  private locationID() { return this.site.site.squareLocationIDs?.[0] || this.site.site.slug; }
+  private friendly(e: any) { const m = String(e?.message || e); return /aborted|abort/i.test(m) ? "no response (timed out)" : /ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|fetch failed/i.test(m) ? "unreachable" : m; }
 
   // Direct-from-LAN preview stream for a box: an explicit URL per box, or <gateway>/api/stream.mp4?src=<boxId>
   // when the site has a preview gateway (go2rtc). The page connects to it itself; nothing goes through Pandora.
@@ -56,27 +60,58 @@ export class SiteState {
       site: { slug: s.slug, name: s.name, shortName: s.shortName, squareLocationIDs: s.squareLocationIDs, timezone: s.timezone || cfg.guide.timezone, mock: cfg.mock, time: Date.now() },
       zones: this.site.zones,
       tvs,
-      boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || cfg.mock, preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),
+      boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || this.via !== "shef", preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),
       otherSources: [...this.others.values()].map((o) => ({ id: o.id, name: o.name, kind: o.kind, tvCount: counts[o.id] || 0 })),
     };
   }
   private emit() { this.events.emit("change", this.snapshot()); }
 
   // ---- Boxes (SHEF) ----
+  private applyTuned(box: BoxState, raw: Tuned) {
+    const ch = findChannel(raw.major);
+    box.tuned = {
+      channel: raw.major, minor: raw.minor === 65535 ? null : raw.minor,
+      callsign: raw.callsign || ch?.callsign || "", channelName: ch?.name || raw.callsign || `Channel ${raw.major}`,
+      title: raw.title || "", episodeTitle: raw.episodeTitle || "",
+      startTime: raw.startTime || null, duration: raw.duration || null, isRecording: Boolean(raw.isRecording), at: Date.now(),
+    };
+    box.online = true; box.error = null; box.offlineSince = null;
+  }
+  private markOffline(box: BoxState, e: any) { if (box.online !== false) box.offlineSince = Date.now(); box.online = false; box.error = this.friendly(e); }
+
+  // Pandora keeps the cached tuned state of every box for a location; one call refreshes all of them.
+  private async refreshViaPandora() {
+    try {
+      const r = await this.pandora.directvBoxes(this.locationID());
+      const rows: any[] = r?.data?.boxes || [];
+      const norm = (x: unknown) => String(x || "").replace(/\s/g, "");
+      for (const box of this.boxes.values()) {
+        const row = rows.find((x) => x.id === box.id || (box.receiverId && x.receiverId && norm(x.receiverId) === norm(box.receiverId)));
+        if (!row) { box.online = null; box.error = "not in the Pandora registry for this location"; continue; }
+        if (row.online === false || !row.tuned) { this.markOffline(box, row.error || "no response"); continue; }
+        this.applyTuned(box, row.tuned as Tuned);
+      }
+    } catch (e: any) {
+      for (const box of this.boxes.values()) { box.online = null; box.error = `Pandora: ${this.friendly(e)}`; }
+    }
+  }
+
   private async refreshBox(box: BoxState) {
     try {
       const ip = this.shefIp(box);
       if (!ip) { box.online = null; box.error = "no SHEF address configured"; return; }
-      const raw = await this.shef.getTuned(ip, box.shef?.clientAddr || "0");
-      const ch = findChannel(raw.major);
-      box.tuned = {
-        channel: raw.major, minor: raw.minor === 65535 ? null : raw.minor,
-        callsign: raw.callsign || ch?.callsign || "", channelName: ch?.name || raw.callsign || `Channel ${raw.major}`,
-        title: raw.title || "", episodeTitle: raw.episodeTitle || "",
-        startTime: raw.startTime || null, duration: raw.duration || null, isRecording: Boolean(raw.isRecording), at: Date.now(),
-      };
-      box.online = true; box.error = null; box.offlineSince = null;
-    } catch (e: any) { if (box.online !== false) box.offlineSince = Date.now(); box.online = false; box.error = e?.message || String(e); }
+      this.applyTuned(box, await this.shef.getTuned(ip, box.shef?.clientAddr || "0"));
+    } catch (e: any) { this.markOffline(box, e); }
+  }
+  private async refreshOne(box: BoxState) {
+    if (this.via === "pandora") { this.lastPoll = 0; await this.refreshAllBoxes(); return; }
+    await this.refreshBox(box); this.emit();
+  }
+  private async sendKeyRaw(box: BoxState, key: string) {
+    if (this.via === "pandora") { await this.pandora.directvKey(this.locationID(), box.id, key); return; }
+    const ip = this.shefIp(box);
+    if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
+    await this.shef.processKey(ip, key, "keyPress", box.shef?.clientAddr || "0");
   }
   // One refresh at a time per site, at most once per poll interval, no matter how many tablets are open:
   // concurrent callers share the in-flight refresh; the timer and on-demand reads share the same throttle.
@@ -85,7 +120,8 @@ export class SiteState {
   async refreshAllBoxes() {
     if (this.inflight) return this.inflight;
     this.lastPoll = Date.now();
-    this.inflight = Promise.all([...this.boxes.values()].map((b) => this.refreshBox(b))).then(() => { this.emit(); }).finally(() => { this.inflight = null; });
+    const work = this.via === "pandora" ? this.refreshViaPandora() : Promise.all([...this.boxes.values()].map((b) => this.refreshBox(b))).then(() => undefined);
+    this.inflight = work.then(() => { this.emit(); }).finally(() => { this.inflight = null; });
     return this.inflight;
   }
   // Refresh on demand only when the last read is older than the poll interval. On a serverless host there is no
@@ -104,23 +140,24 @@ export class SiteState {
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
     const major = Number(channel);
     if (!Number.isInteger(major) || major < 1 || major > 9999) throw new HttpError("Channel must be 1-9999", 400);
-    const ip = this.shefIp(box);
-    if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
-    await this.shef.tune(ip, major, undefined, box.shef?.clientAddr || "0");
+    if (this.via === "pandora") await this.pandora.directvTune(this.locationID(), box.id, major);
+    else {
+      const ip = this.shefIp(box);
+      if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
+      await this.shef.tune(ip, major, undefined, box.shef?.clientAddr || "0");
+    }
     const ch = findChannel(major);
     box.tuned = { ...(box.tuned || { minor: null, title: "", episodeTitle: "", startTime: null, duration: null, isRecording: false, at: 0 }), channel: major, callsign: ch?.callsign || "", channelName: ch?.name || `Channel ${major}`, title: "", pending: true, at: Date.now() };
     this.emit();
-    setTimeout(() => this.refreshBox(box).then(() => this.emit()), 1500);
+    setTimeout(() => this.refreshOne(box), 1500);
     return { box: box.id, channel: major, affectedTvs: [...this.tvs.values()].filter((t) => t.sourceId === boxId).map((t) => t.name) };
   }
 
   async sendKey(boxId: string, key: string) {
     const box = this.boxes.get(boxId);
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
-    const ip = this.shefIp(box);
-    if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
-    await this.shef.processKey(ip, key, "keyPress", box.shef?.clientAddr || "0");
-    setTimeout(() => this.refreshBox(box).then(() => this.emit()), 1200);
+    await this.sendKeyRaw(box, key);
+    setTimeout(() => this.refreshOne(box), 1200);
     return { box: box.id, key };
   }
 
@@ -169,16 +206,15 @@ export class SiteState {
     // A box in standby still answers SHEF; poweron brings the picture back. A crashed box does not answer at all.
     const box = this.boxes.get(boxId);
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
-    const ip = this.shefIp(box);
-    if (!ip) throw new HttpError(`${box.name} has no SHEF address configured`, 409);
-    await this.shef.processKey(ip, "poweron", "keyPress", box.shef?.clientAddr || "0");
-    setTimeout(() => this.refreshBox(box).then(() => this.emit()), 2500);
+    await this.sendKeyRaw(box, "poweron");
+    setTimeout(() => this.refreshOne(box), 2500);
     return { box: box.id, action: "poweron" };
   }
   async retryBox(boxId: string) {
     const box = this.boxes.get(boxId);
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
-    await this.refreshBox(box); this.emit();
+    if (this.via === "pandora") { try { await this.pandora.directvDiscover(this.locationID()); } catch { /* discovery is best effort */ } }
+    await this.refreshOne(box);
     return { box: box.id, online: box.online, error: box.error };
   }
   // Power-cycle through a switched outlet (PDU / smart plug) configured per box: either one cycleUrl, or offUrl + onUrl with a delay.
@@ -186,13 +222,13 @@ export class SiteState {
     const box = this.boxes.get(boxId);
     if (!box) throw new HttpError(`Unknown box ${boxId}`, 404);
     const pw = box.power;
-    if (cfg.mock) { box.online = null; box.error = "rebooting (simulated)"; this.emit(); setTimeout(() => { box.online = true; box.error = null; box.offlineSince = null; this.emit(); }, 6000); return { box: box.id, action: "cycle", simulated: true }; }
+    if (this.via === "mock") { box.online = null; box.error = "rebooting (simulated)"; this.emit(); setTimeout(() => { box.online = true; box.error = null; box.offlineSince = null; this.emit(); }, 6000); return { box: box.id, action: "cycle", simulated: true }; }
     if (!pw?.cycleUrl && !(pw?.offUrl && pw?.onUrl)) throw new HttpError(`${box.name} has no power control configured (see config/sites: boxes[].power)`, 501);
     const hit = async (url: string) => { const r = await fetch(url, { method: pw.method || "GET", signal: AbortSignal.timeout(8000) }); if (!r.ok) throw new HttpError(`Power control answered ${r.status}`, 502); };
     if (pw.cycleUrl) await hit(pw.cycleUrl);
     else { await hit(pw.offUrl!); await new Promise((r) => setTimeout(r, pw.delayMs ?? 8000)); await hit(pw.onUrl!); }
     box.online = null; box.error = "rebooting"; this.emit();
-    setTimeout(() => this.refreshBox(box).then(() => this.emit()), 90000);   // a DirecTV box takes about a minute to come back
+    setTimeout(() => this.refreshOne(box), 90000);   // a DirecTV box takes about a minute to come back
     return { box: box.id, action: "cycle" };
   }
   // Move every screen of a box to another box: one already on the same channel, else a free healthy box, else the given target.
