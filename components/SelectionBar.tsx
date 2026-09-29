@@ -20,7 +20,7 @@ export default function SelectionBar({ m, gi, cat, sel, onClear, onPick, onPower
                 <button className="btn outline sm" onClick={() => onPower(projectors, false)}>Power off</button>
               </span>
             )}
-            <button className="btn outline sm clear" onClick={onClear}>Clear</button>
+            <button className="btn outline sm clear" onClick={onClear} aria-label="Close and clear the selection">Close</button>
           </div>
           <div className="eyebrow" style={{ marginTop: 8 }}>DirecTV</div>
           <div className="srcs">
