@@ -1,0 +1,13 @@
+node_modules/
+.env
+research/.app-token.txt
+# large raw captures (kept locally, not in git)
+research/helpers.js
+research/fxComponents.js
+research/swagger-ui-init.js
+research/vars.json
+research/vars-now.json
+research/tvmedia/*.json
+research/tmp.out
+research/*.pid
+.vercel/

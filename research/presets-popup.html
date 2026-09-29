@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="format-detection" content="address=no">
+<meta name="format-detection" content="email=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="msapplication-tap-highlight" content="no">
+<title>Head Pinz</title>
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<link rel="icon" href="images/icon-192.png">
+<link rel="stylesheet" href="css/font-icons.css?ver=-1340094562">
+<link rel="stylesheet" href="css/kendo.css?ver=-1340094562">
+<link rel="stylesheet" href="css/app.css?ver=-1340094562">
+<script src="js/jquery.js?ver=-1340094562"></script>
+<script src="js/kendo.js?ver=-1340094562"></script>
+<script src="js/helpers.js?ver=-1340094562"></script>
+<script src="js/custom.js?ver=-1340094562"></script>
+<script src="js/fxApp.js?ver=-1340094562"></script>
+<script src="js/fxComponents.js?ver=-1340094562" type="module"></script>
+</head>
+<body>
+<ui-project id="ui-project" backgroundcolor="rgb(0,0,0)" backgroundimage="images/background.jpg"></ui-project><div class="main-content">
+    
+
+<ui-panel id="17914adc19b7686cf" width="466" height="898" left="897" top="1" borderradii="0 0 0 0" backgroundcolor="rgba(38,50,56,0.95)" backgroundtype="color" filter="blur(1px)" bordertop="1px solid rgba(176,190,196,0.68)" borderbottom="1px solid rgba(176,190,196,0.68)" borderright="1px solid rgba(176,190,196,0.68)" borderleft="1px solid rgba(176,190,196,0.68)"></ui-panel>
+<ui-label id="186be38558d4a2203" width="466" height="50" left="898" top="36" label="[[presets_activeclass_[[clientname]]]] Presets" textalign="center" fontfamily="Roboto" fontsize="34" fontweight="300"></ui-label>
+<ui-label id="186be38558d2fa458" width="456" height="34" left="908" top="5" label="[[presets_activeroom_[[clientname]]]]" color="rgba(255,229,127,1.00)" textalign="left" fontfamily="Roboto" fontsize="24" fontweight="300"></ui-label>
+<ui-button id="186be38558d6b6d59" top="28" left="1302" width="48" height="48" borderradii="7 7 7 7" backgroundcolor="rgba(16,185,129,1.00)" gradientsteps="2" filter="none" borders="1px solid rgba(144,164,174,0.65)" outline="none" outershadow="medium" fontfamily="Roboto" fontsize="30" fontweight="300" fontcolor="rgba(255,255,255,1.00)" icon="fal.plus-large" servercmd="CreateNewPreset|[[presets_activeroom_[[clientname]]]]~[[presets_activeclass_[[clientname]]]]"></ui-button>
+<ui-scroller id="186be38558f61d391" top="94" left="902" width="460" height="798" pagesize="100" theme="system presets" size="large" api="/api/getgrouppresets/[[presets_activeclass_[[clientname]]]]/[[presets_activeroom_[[clientname]]]]?refresh=[[presets_refresh_[[clientname]]]]"></ui-scroller>
+<ui-panel id="186c31cf50034f785" width="450" height="2" left="906" top="86" backgroundcolor="rgba(144,164,174,0.48)" backgroundtype="color" border="1px solid rgba(144,164,174,0.65)" filter="blur(1px)"></ui-panel> 
+</div></body>
+</html>

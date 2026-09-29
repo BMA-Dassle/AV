@@ -1,0 +1,27 @@
+{
+  "name": "headpinz-tv-control",
+  "version": "0.1.0",
+  "description": "Bartender-friendly TV control for Head Pinz: Pandora HDTV matrix + DirecTV SHEF",
+  "main": "server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "mock": "node -e \"process.env.MOCK=1;require('./server.js')\"",
+    "build:public": "node scripts/build-mockup.js",
+    "build:mockup": "node scripts/build-mockup.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}

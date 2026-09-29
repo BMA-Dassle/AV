@@ -1,0 +1,855 @@
+{
+  "site": {
+    "slug": "fort-myers",
+    "name": "Head Pinz Fort Myers",
+    "shortName": "Fort Myers",
+    "squareLocationIDs": [
+      "TXBSQN0FEKQ11",
+      "LAB52GY480CJF"
+    ],
+    "guideLineup": "36463D",
+    "timezone": "America/New_York",
+    "previewGateway": "http://REPLACE_WITH_ONSITE_GATEWAY:1984",
+    "legacyControllerBase": "http://10.43.60.245"
+  },
+  "boxes": [
+    {
+      "id": "dtv1",
+      "name": "DTV 1",
+      "legacyDeviceId": 56,
+      "color": "#FF7A3D",
+      "shef": {
+        "ip": "10.43.60.70",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv2",
+      "name": "DTV 2",
+      "legacyDeviceId": 57,
+      "color": "#3D8BFF",
+      "shef": {
+        "ip": "10.43.60.71",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv3",
+      "name": "DTV 3",
+      "legacyDeviceId": 58,
+      "color": "#FFD23F",
+      "shef": {
+        "ip": "10.43.60.72",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv4",
+      "name": "DTV 4",
+      "legacyDeviceId": 59,
+      "color": "#5CD37A",
+      "shef": {
+        "ip": "10.43.60.73",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv5",
+      "name": "DTV 5",
+      "legacyDeviceId": 60,
+      "color": "#FF4FA3",
+      "shef": {
+        "ip": "10.43.60.74",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv6",
+      "name": "DTV 6",
+      "legacyDeviceId": 61,
+      "color": "#A98BFF",
+      "shef": {
+        "ip": "10.43.60.75",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv7",
+      "name": "DTV 7",
+      "legacyDeviceId": 62,
+      "color": "#2ED3C6",
+      "shef": {
+        "ip": "10.43.60.76",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "shefIpUnverified": "could be swapped with its pair; confirm by watching a channel change",
+      "receiverId": ""
+    },
+    {
+      "id": "dtv8",
+      "name": "DTV 8",
+      "legacyDeviceId": 63,
+      "color": "#FF4D4D",
+      "shef": {
+        "ip": "10.43.60.77",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      },
+      "preview": "",
+      "model": "DirecTV modelId 89, SHEF 2.5",
+      "receiverId": ""
+    }
+  ],
+  "otherSources": [
+    {
+      "id": "music1",
+      "name": "Bowling Music 1",
+      "kind": "music",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    },
+    {
+      "id": "music2",
+      "name": "Bowling Music 2",
+      "kind": "music",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    },
+    {
+      "id": "mms1",
+      "name": "MMS 1",
+      "kind": "signage",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    },
+    {
+      "id": "mms2",
+      "name": "MMS 2",
+      "kind": "signage",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    },
+    {
+      "id": "atmosphere",
+      "name": "Atmosphere",
+      "kind": "signage",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    },
+    {
+      "id": "meeting",
+      "name": "Meeting Room PC",
+      "kind": "presentation",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    }
+  ],
+  "zones": [
+    {
+      "id": "bar",
+      "name": "Bar"
+    },
+    {
+      "id": "pool",
+      "name": "Pool Tables"
+    },
+    {
+      "id": "axe",
+      "name": "Axe Throwing"
+    },
+    {
+      "id": "patio",
+      "name": "Patio"
+    },
+    {
+      "id": "terrace",
+      "name": "Terrace"
+    },
+    {
+      "id": "vip",
+      "name": "VIP"
+    },
+    {
+      "id": "lanes",
+      "name": "Lanes (Projectors)"
+    },
+    {
+      "id": "neoverse",
+      "name": "Neoverse"
+    },
+    {
+      "id": "shuffly",
+      "name": "Shuffly"
+    },
+    {
+      "id": "other",
+      "name": "Other"
+    }
+  ],
+  "tvs": [
+    {
+      "id": "bar-1",
+      "name": "Bar 1",
+      "zone": "bar",
+      "legacyOutId": 54,
+      "map": [
+        774,
+        1326
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-2",
+      "name": "Bar 2",
+      "zone": "bar",
+      "legacyOutId": 48,
+      "map": [
+        705,
+        1414
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-3",
+      "name": "Bar 3",
+      "zone": "bar",
+      "legacyOutId": 33,
+      "map": [
+        557,
+        1414
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-4",
+      "name": "Bar 4",
+      "zone": "bar",
+      "legacyOutId": 19,
+      "map": [
+        409,
+        1414
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-5",
+      "name": "Bar 5",
+      "zone": "bar",
+      "legacyOutId": 46,
+      "map": [
+        261,
+        1414
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-6",
+      "name": "Bar 6",
+      "zone": "bar",
+      "legacyOutId": 17,
+      "map": [
+        191,
+        1326
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-7",
+      "name": "Bar 7",
+      "zone": "bar",
+      "legacyOutId": 14,
+      "map": [
+        181,
+        1239
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-8",
+      "name": "Bar 8",
+      "zone": "bar",
+      "legacyOutId": 36,
+      "map": [
+        329,
+        1239
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-9",
+      "name": "Bar 9",
+      "zone": "bar",
+      "legacyOutId": 26,
+      "map": [
+        477,
+        1239
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-10",
+      "name": "Bar 10",
+      "zone": "bar",
+      "legacyOutId": 40,
+      "map": [
+        625,
+        1239
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "bar-11",
+      "name": "Bar 11",
+      "zone": "bar",
+      "legacyOutId": 45,
+      "map": [
+        773,
+        1239
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "pool-1",
+      "name": "Pool Table 1",
+      "zone": "pool",
+      "legacyOutId": 47,
+      "map": [
+        29,
+        1212
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "pool-2",
+      "name": "Pool Table 2",
+      "zone": "pool",
+      "legacyOutId": 30,
+      "map": [
+        29,
+        732
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "pool-3",
+      "name": "Pool Table 3",
+      "zone": "pool",
+      "legacyOutId": 50,
+      "map": [
+        178,
+        732
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "pool-4",
+      "name": "Pool Table 4",
+      "zone": "pool",
+      "legacyOutId": 15,
+      "map": [
+        332,
+        753
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "pool-5",
+      "name": "Pool Table 5",
+      "zone": "pool",
+      "legacyOutId": 39,
+      "map": [
+        332,
+        923
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "axe-1",
+      "name": "Axe Throwing 1",
+      "zone": "axe",
+      "legacyOutId": 52,
+      "map": [
+        940,
+        1011
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "axe-2",
+      "name": "Axe Throwing 2",
+      "zone": "axe",
+      "legacyOutId": 55,
+      "map": [
+        940,
+        1101
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "axe-3",
+      "name": "Axe Throwing 3",
+      "zone": "axe",
+      "legacyOutId": 53,
+      "map": [
+        474,
+        1101
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "axe-4",
+      "name": "Axe Throwing 4",
+      "zone": "axe",
+      "legacyOutId": 31,
+      "map": [
+        474,
+        1011
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "patio-1",
+      "name": "Patio 1",
+      "zone": "patio",
+      "legacyOutId": 37,
+      "map": [
+        374,
+        1621
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "patio-2",
+      "name": "Patio 2",
+      "zone": "patio",
+      "legacyOutId": 28,
+      "map": [
+        546,
+        1621
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "patio-3",
+      "name": "Patio 3",
+      "zone": "patio",
+      "legacyOutId": 25,
+      "map": [
+        755,
+        1621
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "patio-4",
+      "name": "Patio 4",
+      "zone": "patio",
+      "legacyOutId": 23,
+      "map": [
+        926,
+        1621
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "terrace-1",
+      "name": "Terrace 1",
+      "zone": "terrace",
+      "legacyOutId": 16,
+      "map": [
+        1078,
+        317
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "terrace-2",
+      "name": "Terrace 2",
+      "zone": "terrace",
+      "legacyOutId": 24,
+      "map": [
+        1078,
+        421
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "terrace-3",
+      "name": "Terrace 3",
+      "zone": "terrace",
+      "legacyOutId": 51,
+      "map": [
+        1078,
+        525
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "terrace-4",
+      "name": "Terrace 4",
+      "zone": "terrace",
+      "legacyOutId": 27,
+      "map": [
+        1080,
+        893
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "vip-1",
+      "name": "VIP 1",
+      "zone": "vip",
+      "legacyOutId": 29,
+      "map": [
+        992,
+        85
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "vip-2",
+      "name": "VIP 2",
+      "zone": "vip",
+      "legacyOutId": 32,
+      "map": [
+        828,
+        129
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "vip-3",
+      "name": "VIP 3",
+      "zone": "vip",
+      "legacyOutId": 18,
+      "map": [
+        628,
+        129
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "proj-1",
+      "name": "Projector 1",
+      "zone": "lanes",
+      "legacyOutId": 42,
+      "map": [
+        162,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "proj-2",
+      "name": "Projector 2",
+      "zone": "lanes",
+      "legacyOutId": 41,
+      "map": [
+        312,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "proj-3",
+      "name": "Projector 3",
+      "zone": "lanes",
+      "legacyOutId": 35,
+      "map": [
+        462,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "proj-4",
+      "name": "Projector 4",
+      "zone": "lanes",
+      "legacyOutId": 43,
+      "map": [
+        612,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "proj-5",
+      "name": "Projector 5",
+      "zone": "lanes",
+      "legacyOutId": 20,
+      "map": [
+        762,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "proj-6",
+      "name": "Projector 6",
+      "zone": "lanes",
+      "legacyOutId": 44,
+      "map": [
+        912,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "neo-1",
+      "name": "Neoverse 1",
+      "zone": "neoverse",
+      "legacyOutId": 34,
+      "map": [
+        1150,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "neo-2",
+      "name": "Neoverse 2",
+      "zone": "neoverse",
+      "legacyOutId": 21,
+      "map": [
+        1300,
+        1841
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "neo-3",
+      "name": "Neoverse 3",
+      "zone": "neoverse",
+      "legacyOutId": 38,
+      "map": [
+        1150,
+        1931
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "neo-4",
+      "name": "Neoverse 4",
+      "zone": "neoverse",
+      "legacyOutId": 49,
+      "map": [
+        1300,
+        1931
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "shuffly-1",
+      "name": "Shuffly 1",
+      "zone": "shuffly",
+      "legacyOutId": 225,
+      "map": [
+        840,
+        1425
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "shuffly-2",
+      "name": "Shuffly 2",
+      "zone": "shuffly",
+      "legacyOutId": 227,
+      "map": [
+        970,
+        1425
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "shuffly-3",
+      "name": "Shuffly 3",
+      "zone": "shuffly",
+      "legacyOutId": 228,
+      "map": [
+        1100,
+        1425
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "meeting",
+      "name": "Meeting Room",
+      "zone": "other",
+      "legacyOutId": 22,
+      "map": [
+        255,
+        520
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    },
+    {
+      "id": "frontdesk",
+      "name": "Front Desk",
+      "zone": "other",
+      "legacyOutId": 71,
+      "map": [
+        1301,
+        838
+      ],
+      "decoder": {
+        "ip": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="format-detection" content="address=no">
+<meta name="format-detection" content="email=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="msapplication-tap-highlight" content="no">
+<title>Head Pinz</title>
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<link rel="icon" href="images/icon-192.png">
+<link rel="stylesheet" href="css/font-icons.css?ver=-1340094562">
+<link rel="stylesheet" href="css/kendo.css?ver=-1340094562">
+<link rel="stylesheet" href="css/app.css?ver=-1340094562">
+<script src="js/jquery.js?ver=-1340094562"></script>
+<script src="js/kendo.js?ver=-1340094562"></script>
+<script src="js/helpers.js?ver=-1340094562"></script>
+<script src="js/custom.js?ver=-1340094562"></script>
+<script src="js/fxApp.js?ver=-1340094562"></script>
+<script src="js/fxComponents.js?ver=-1340094562" type="module"></script>
+</head>
+<body>
+<ui-project id="ui-project" backgroundcolor="rgb(0,0,0)" backgroundimage="images/background.jpg"></ui-project><div class="main-content">
+    
+
+<ui-content id="ui-content">
+<ui-tvguide id="176491633626a93dc" top="80" left="260" width="1113" height="838" api="/api/tv/guide/[[active_lineup_[[clientname]]]]/3/[[active_lineupfilter_[[clientname]]]]"></ui-tvguide>
+<ui-panel id="17649125ab650b689" width="1113" height="80" left="252" top="0" backgroundcolor="rgba(21,27,31,0.48)" backgroundtype="color" filter="blur(1px)"></ui-panel>
+<ui-button id="176490fbf696b48d" width="101" height="58" left="272" top="8" borderradii="5 0 0 5" backgroundcolor="rgba(144,164,174,0.48)" borders="1px solid rgba(144,164,174,0.65)" outline="none" label="All" fontfamily="Roboto" fontsize="30" fontweight="400" fontcolor="rgba(255,255,255,1.00)" statevar="[[active_lineupfilter_[[clientname]]]]" activevalue="all" onbackgroundcolor="rgba(144,164,174,0.48)" onvisible="1" onclickable="1" offbackgroundcolor="rgba(21,27,31,0.48)" offvisible="1" offclickable="1" servercmd="SetVariable|active_lineupfilter_[[clientname]]~all" transparent="0"></ui-button>
+<ui-button id="176490fbf7033f529" width="101" height="58" left="374" top="8" borderradii="0 0 0 0" backgroundcolor="rgba(21,27,31,0.48)" borders="1px solid rgba(144,164,174,0.65)" outline="none" labelpadding="0" fontfamily="Roboto" fontsize="32" fontweight="400" fontcolor="rgba(255,255,255,1.00)" icon="fal.heart" iconpadding="0,0,0" statevar="[[active_lineupfilter_[[clientname]]]]" activevalue="favorites" onbackgroundcolor="rgba(144,164,174,0.48)" onvisible="1" onclickable="1" offbackgroundcolor="rgba(21,27,31,0.48)" offvisible="1" offclickable="1" servercmd="SetVariable|active_lineupfilter_[[clientname]]~favorites"></ui-button>
+<ui-button id="176490fbf726481f3" width="101" height="58" left="476" top="8" borderradii="0 0 0 0" backgroundcolor="rgba(21,27,31,0.48)" borders="1px solid rgba(144,164,174,0.65)" outline="none" fontfamily="Roboto" fontsize="32" fontweight="400" fontcolor="rgba(255,255,255,1.00)" icon="fal.football-ball" iconpadding="0,0,0" statevar="[[active_lineupfilter_[[clientname]]]]" activevalue="sports" onbackgroundcolor="rgba(144,164,174,0.48)" onvisible="1" onclickable="1" offbackgroundcolor="rgba(21,27,31,0.48)" offvisible="1" offclickable="1" servercmd="SetVariable|active_lineupfilter_[[clientname]]~sports"></ui-button>
+<ui-button id="176490fbf7423c4b1" width="101" height="58" left="577" top="8" borderradii="0 0 0 0" backgroundcolor="rgba(21,27,31,0.48)" borders="1px solid rgba(144,164,174,0.65)" outline="none" fontfamily="Roboto" fontsize="32" fontweight="400" fontcolor="rgba(255,255,255,1.00)" icon="fal.newspaper" iconpadding="0,0,-1" statevar="[[active_lineupfilter_[[clientname]]]]" activevalue="news" onbackgroundcolor="rgba(144,164,174,0.48)" onvisible="1" onclickable="1" offbackgroundcolor="rgba(21,27,31,0.48)" offvisible="1" offclickable="1" servercmd="SetVariable|active_lineupfilter_[[clientname]]~news"></ui-button>
+<ui-button id="176490fbf767a89cb" width="101" height="58" left="679" top="8" borderradii="0 0 0 0" backgroundcolor="rgba(21,27,31,0.48)" borders="1px solid rgba(144,164,174,0.65)" outline="none" fontfamily="Roboto" fontsize="32" fontweight="400" fontcolor="rgba(255,255,255,1.00)" icon="fal.camera-movie" statevar="[[active_lineupfilter_[[clientname]]]]" activevalue="movies" onbackgroundcolor="rgba(144,164,174,0.48)" onlabelcolor="rgba(255,255,255,1.00)" onvisible="1" onclickable="1" offbackgroundcolor="rgba(21,27,31,0.48)" offlabelcolor="rgba(255,255,255,1.00)" offvisible="1" offclickable="1" servercmd="SetVariable|active_lineupfilter_[[clientname]]~movies"></ui-button>
+<ui-label id="1775ab2154559b73e" width="467" height="55" left="892" top="10" label="myTV is running in demo mode. Viewing your channel listings requires an active TV Guide subscription. Please contact Allonis for more infomation." color="rgba(251,192,45,1.00)" textalign="left" fontfamily="Roboto" fontsize="15" fontweight="400" fontstyle="normal" statevar="[[tv_isdemo]]" onvisible="1" offcolor="rgba(255,255,255,0.00)" offvisible="0"></ui-label>
+<ui-button id="1798b42051b234c0b" width="101" height="58" left="781" top="8" borderradii="0 5 5 0" backgroundcolor="rgba(21,27,31,0.48)" borders="1px solid rgba(144,164,174,0.65)" outline="none" fontfamily="Roboto" fontsize="32" fontweight="400" fontcolor="rgba(255,255,255,1.00)" icon="fal.tv-music" statevar="[[active_lineupfilter_[[clientname]]]]" activevalue="music" onbackgroundcolor="rgba(144,164,174,0.48)" onlabelcolor="rgba(255,255,255,1.00)" onvisible="1" onclickable="1" offbackgroundcolor="rgba(21,27,31,0.48)" offlabelcolor="rgba(255,255,255,1.00)" offvisible="1" offclickable="1" servercmd="SetVariable|active_lineupfilter_[[clientname]]~music"></ui-button><ux-overlays overlays="1~overlay-mainnavigator-sidebar.html~~1^2~overlay-mainnavigator.html~~1^3~overlay-video-sources.html~~1^4~overlay-schedule-dialog.html~~0"></ux-overlays></ui-content> 
+</div></body>
+</html>
