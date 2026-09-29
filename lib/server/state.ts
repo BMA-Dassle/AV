@@ -1,7 +1,7 @@
 // In-memory model of one location's floor: which source is on each TV, what each DirecTV box is tuned to.
 // One instance per site, kept as a module singleton (per process; on a serverless host it starts cold per instance).
 import { EventEmitter } from "events";
-import { cfg, findSite, sites, HttpError, type SiteConfig, type BoxConfig, type TvConfig, type Encoder } from "./config";
+import { cfg, findSite, sites, HttpError, type SiteConfig, type BoxConfig, type TvConfig, type Encoder, type PlanConfig } from "./config";
 import { findChannel } from "./channels";
 import { makeMockPandora, makeMockShef, SEED_TVS } from "./mock";
 import { pandora as realPandora, type PandoraClient } from "./pandora";
@@ -13,7 +13,7 @@ export type TunedView = { channel: number; minor: number | null; callsign: strin
 export type BoxView = { id: string; name: string; color: string; receiverId: string | null; online: boolean | null; error: string | null; offlineSince: number | null; tuned: TunedView | null; tvCount: number; configured: boolean; preview: string | null; powerControl: boolean };
 export type TvView = { id: string; name: string; zone: string; map?: [number, number]; sourceId: string | null; lastChange: number | null; error: string | null; configured: boolean; display: { kind: string; power: boolean | null } | null };
 export type Snapshot = {
-  site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; timezone: string; mock: boolean; time: number };
+  site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; timezone: string; mock: boolean; time: number; plan: PlanConfig };
   zones: { id: string; name: string }[]; tvs: TvView[]; boxes: BoxView[]; otherSources: { id: string; name: string; kind: string; tvCount: number }[];
 };
 
@@ -83,7 +83,7 @@ export class SiteState {
     for (const t of tvs) if (t.sourceId) counts[t.sourceId] = (counts[t.sourceId] || 0) + 1;
     const s = this.site.site;
     return {
-      site: { slug: s.slug, name: s.name, shortName: s.shortName, squareLocationIDs: s.squareLocationIDs, timezone: s.timezone || cfg.guide.timezone, mock: cfg.mock, time: Date.now() },
+      site: { slug: s.slug, name: s.name, shortName: s.shortName, squareLocationIDs: s.squareLocationIDs, timezone: s.timezone || cfg.guide.timezone, mock: cfg.mock, time: Date.now(), plan: s.map || { panels: [], tile: [120, 70] } },
       zones: this.site.zones,
       tvs,
       boxes: [...this.boxes.values()].map((b) => ({ id: b.id, name: b.name, color: b.color, receiverId: b.receiverId || null, online: b.online, error: b.error, offlineSince: b.offlineSince, tuned: b.tuned, tvCount: counts[b.id] || 0, configured: Boolean(b.shef?.ip) || this.via !== "shef", preview: this.previewUrl(b), powerControl: Boolean(b.power?.cycleUrl || (b.power?.offUrl && b.power?.onUrl)) })),

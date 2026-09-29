@@ -13,7 +13,48 @@
     "directvSubnets": [
       "10.43.60.0/24"
     ],
-    "notes": "Addresses from the Allonis controller device tables (/api/getdevices/avoip900/all and /directv/all) on 2026-09-28. Atmosphere = the \"ChiveTV\" transmitter. Quirks in the source data: \"Transmitter 107\" (10.43.60.61) shares node id 107 with DTV4, \"Transmitter 24\" (10.43.60.62) shares 24 with ChiveTV, and Terrace 2 / Shuffly 2 report the same serial; left as found."
+    "notes": "Addresses from the Allonis controller device tables (/api/getdevices/avoip900/all and /directv/all) on 2026-09-28. Atmosphere = the \"ChiveTV\" transmitter. Quirks in the source data: \"Transmitter 107\" (10.43.60.61) shares node id 107 with DTV4, \"Transmitter 24\" (10.43.60.62) shares 24 with ChiveTV, and Terrace 2 / Shuffly 2 report the same serial; left as found.",
+    "map": {
+      "landscape": "row",
+      "tile": [
+        130,
+        70
+      ],
+      "panels": [
+        {
+          "id": "lanes",
+          "name": "Lanes & Neoverse",
+          "x0": 0,
+          "y0": 1760,
+          "x1": 1470,
+          "y1": 2400,
+          "image": "/brand/hpfm/floor-lanes.png",
+          "imageBox": [
+            0,
+            1760,
+            1470,
+            640
+          ],
+          "rotate": "cw"
+        },
+        {
+          "id": "main",
+          "name": "Bar, patio & rooms",
+          "x0": 0,
+          "y0": 0,
+          "x1": 1470,
+          "y1": 1760,
+          "image": "/brand/hpfm/floor-main.png",
+          "imageBox": [
+            0,
+            0,
+            1470,
+            1760
+          ],
+          "rotate": "ccw"
+        }
+      ]
+    }
   },
   "boxes": [
     {

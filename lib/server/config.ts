@@ -10,13 +10,17 @@ export type BoxConfig = {
   // Switched outlet for a hard reboot: a single cycle URL, or off + on URLs with a delay (PDU, smart plug, Q-SYS relay endpoint).
   power?: { cycleUrl?: string; offUrl?: string; onUrl?: string; delayMs?: number; method?: string };
 };
+// The floor drawing: one or more panels in the old controller's coordinate space; tvs[].map is each tile's top-left.
+export type PlanPanel = { id: string; name?: string; x0: number; y0: number; x1: number; y1: number; image?: string; imageBox?: [number, number, number, number]; rotate?: "cw" | "ccw" };
+// landscape "row": on landscape screens the panels sit side by side at equal height (else they stack).
+export type PlanConfig = { panels: PlanPanel[]; tile: [number, number]; landscape?: "row" | "stack" };
 export type SourceConfig = { id: string; name: string; kind: string; encoder: Encoder };
 export type ZoneConfig = { id: string; name: string };
 export type TvConfig = { id: string; name: string; zone: string; legacyOutId?: number; map?: [number, number]; decoder: { ip: string; nodeId?: string | number; legacyDeviceId?: number };
   // Power control of the display itself (projectors). Optional; TVs without it have no power buttons.
   display?: { kind: "projector" | "tv"; protocol?: "optoma" | "pjlink"; ip: string; port?: number; legacyDeviceId?: number } };
 export type SiteConfig = {
-  site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; guideLineup?: string; timezone?: string; previewGateway?: string; directvSubnets?: string[]; legacyControllerBase?: string; notes?: string };
+  site: { slug: string; name: string; shortName: string; squareLocationIDs: string[]; guideLineup?: string; timezone?: string; previewGateway?: string; directvSubnets?: string[]; legacyControllerBase?: string; notes?: string; map?: PlanConfig };
   boxes: BoxConfig[]; otherSources: SourceConfig[]; zones: ZoneConfig[]; tvs: TvConfig[];
 };
 

@@ -4,16 +4,1061 @@
     "name": "HeadPinz Naples",
     "shortName": "HPN",
     "squareLocationIDs": [
-      "REPLACE_WITH_SQUARE_LOCATION_ID_HPN"
+      "PPTR5G2N0QXF7"
     ],
     "guideLineup": "36463D",
     "timezone": "America/New_York",
     "previewGateway": "",
-    "directvSubnets": [],
-    "notes": "TODO: Square location id, TV list with zones and plan positions, floor plan image, DirecTV boxes (receiverId), encoders, subnet, guide lineup (Naples may be a different DirecTV market)."
+    "directvSubnets": [
+      "10.40.60.0/24"
+    ],
+    "legacyControllerBase": "http://10.40.60.245",
+    "map": {
+      "panels": [
+        {
+          "id": "bar",
+          "name": "Nemos, video walls & VIP",
+          "x0": -8,
+          "y0": -3,
+          "x1": 1521,
+          "y1": 832,
+          "image": "/brand/hpn/floor-bar.png",
+          "imageBox": [
+            -8,
+            -3,
+            1529,
+            835
+          ]
+        },
+        {
+          "id": "lanes",
+          "name": "Lanes & Neoverse",
+          "x0": 1577,
+          "y0": -8,
+          "x1": 3545,
+          "y1": 300,
+          "image": "/brand/hpn/floor-lanes.png",
+          "imageBox": [
+            1577,
+            -8,
+            1918,
+            730
+          ]
+        },
+        {
+          "id": "patio",
+          "name": "Patio",
+          "x0": 3560,
+          "y0": 190,
+          "x1": 4560,
+          "y1": 570
+        }
+      ],
+      "tile": [
+        120,
+        70
+      ]
+    },
+    "notes": "Built 2026-09-29 from the Allonis controller at 10.40.60.245 (/api/getdevices/voip925|directv|Optoma/all, project headpinz-naples). NEMOS 1-6 and NEMOS 19-24 are 3x2 video walls (the old page had Full/Single wall modes); v1 treats each wall tile as a screen. Chive TV has no encoder in the AVoIP table. Nemos 11 had no button on the old plan and was placed by hand. The old plan is three side-by-side panels; the app stacks them."
   },
-  "boxes": [],
-  "otherSources": [],
-  "zones": [],
-  "tvs": []
+  "boxes": [
+    {
+      "id": "dtv1",
+      "name": "DTV 1",
+      "legacyDeviceId": 56,
+      "color": "#fb923c",
+      "receiverId": "0323 6085 9584",
+      "shef": {
+        "ip": "10.40.60.70",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.3",
+        "devid": "20"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv2",
+      "name": "DTV 2",
+      "legacyDeviceId": 57,
+      "color": "#60a5fa",
+      "receiverId": "0323 6087 1332",
+      "shef": {
+        "ip": "10.40.60.71",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.4",
+        "devid": "22"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv3",
+      "name": "DTV 3",
+      "legacyDeviceId": 58,
+      "color": "#facc15",
+      "receiverId": "0323 6085 9303",
+      "shef": {
+        "ip": "10.40.60.72",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.5",
+        "devid": "24"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv4",
+      "name": "DTV 4",
+      "legacyDeviceId": 59,
+      "color": "#4ade80",
+      "receiverId": "0323 6086 2570",
+      "shef": {
+        "ip": "10.40.60.73",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.6",
+        "devid": "25"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv5",
+      "name": "DTV 5",
+      "legacyDeviceId": 60,
+      "color": "#f472b6",
+      "receiverId": "0323 6086 1184",
+      "shef": {
+        "ip": "10.40.60.74",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.7",
+        "devid": "27"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv6",
+      "name": "DTV 6",
+      "legacyDeviceId": 61,
+      "color": "#a78bfa",
+      "receiverId": "0323 6047 8120",
+      "shef": {
+        "ip": "10.40.60.75",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.8",
+        "devid": "29"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv7",
+      "name": "DTV 7",
+      "legacyDeviceId": 62,
+      "color": "#2dd4bf",
+      "receiverId": "0323 6086 3198",
+      "shef": {
+        "ip": "10.40.60.76",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.10",
+        "devid": "28"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    },
+    {
+      "id": "dtv8",
+      "name": "DTV 8",
+      "legacyDeviceId": 63,
+      "color": "#f87171",
+      "receiverId": "0323 6065 2153",
+      "shef": {
+        "ip": "10.40.60.77",
+        "clientAddr": "0"
+      },
+      "encoder": {
+        "ip": "10.40.60.11",
+        "devid": "32"
+      },
+      "model": "DirecTV modelId 89",
+      "preview": ""
+    }
+  ],
+  "otherSources": [
+    {
+      "id": "music1",
+      "name": "Music 1",
+      "kind": "music",
+      "encoder": {
+        "ip": "10.40.60.2",
+        "devid": "31"
+      }
+    },
+    {
+      "id": "music2",
+      "name": "Music 2",
+      "kind": "music",
+      "encoder": {
+        "ip": "10.40.60.9",
+        "devid": "26"
+      }
+    },
+    {
+      "id": "mms1",
+      "name": "MMS 1",
+      "kind": "signage",
+      "encoder": {
+        "ip": "10.40.60.60",
+        "devid": "30"
+      }
+    },
+    {
+      "id": "mms2",
+      "name": "MMS 2",
+      "kind": "signage",
+      "encoder": {
+        "ip": "10.40.60.59",
+        "devid": "21"
+      }
+    },
+    {
+      "id": "chive",
+      "name": "Chive TV",
+      "kind": "signage",
+      "encoder": {
+        "ip": "",
+        "devid": ""
+      }
+    }
+  ],
+  "zones": [
+    {
+      "id": "videowall",
+      "name": "Video Wall (Nemos 1-6)"
+    },
+    {
+      "id": "nemos",
+      "name": "Nemos"
+    },
+    {
+      "id": "videowall2",
+      "name": "Video Wall 2 (Nemos 19-24)"
+    },
+    {
+      "id": "vip",
+      "name": "VIP"
+    },
+    {
+      "id": "lanes",
+      "name": "Lanes (Projectors)"
+    },
+    {
+      "id": "neoverse",
+      "name": "Neoverse"
+    },
+    {
+      "id": "patio",
+      "name": "Patio"
+    }
+  ],
+  "tvs": [
+    {
+      "id": "proj-1",
+      "name": "Projector 1",
+      "zone": "lanes",
+      "legacyOutId": 30,
+      "map": [
+        1609,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.45",
+        "nodeId": "122",
+        "legacyDeviceId": 30
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.100",
+        "port": 23,
+        "legacyDeviceId": 77
+      }
+    },
+    {
+      "id": "proj-2",
+      "name": "Projector 2",
+      "zone": "lanes",
+      "legacyOutId": 31,
+      "map": [
+        1757,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.46",
+        "nodeId": "123",
+        "legacyDeviceId": 31
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.101",
+        "port": 23,
+        "legacyDeviceId": 78
+      }
+    },
+    {
+      "id": "proj-3",
+      "name": "Projector 3",
+      "zone": "lanes",
+      "legacyOutId": 27,
+      "map": [
+        1905,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.47",
+        "nodeId": "119",
+        "legacyDeviceId": 27
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.102",
+        "port": 23,
+        "legacyDeviceId": 79
+      }
+    },
+    {
+      "id": "proj-4",
+      "name": "Projector 4",
+      "zone": "lanes",
+      "legacyOutId": 20,
+      "map": [
+        2053,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.48",
+        "nodeId": "111",
+        "legacyDeviceId": 20
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.103",
+        "port": 23,
+        "legacyDeviceId": 80
+      }
+    },
+    {
+      "id": "proj-5",
+      "name": "Projector 5",
+      "zone": "lanes",
+      "legacyOutId": 26,
+      "map": [
+        2201,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.49",
+        "nodeId": "118",
+        "legacyDeviceId": 26
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.104",
+        "port": 23,
+        "legacyDeviceId": 81
+      }
+    },
+    {
+      "id": "proj-6",
+      "name": "Projector 6",
+      "zone": "lanes",
+      "legacyOutId": 70,
+      "map": [
+        2349,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.50",
+        "nodeId": "114",
+        "legacyDeviceId": 70
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.105",
+        "port": 23,
+        "legacyDeviceId": 82
+      }
+    },
+    {
+      "id": "proj-7",
+      "name": "Projector 7",
+      "zone": "lanes",
+      "legacyOutId": 42,
+      "map": [
+        2497,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.51",
+        "nodeId": "91",
+        "legacyDeviceId": 42
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.106",
+        "port": 23,
+        "legacyDeviceId": 83
+      }
+    },
+    {
+      "id": "proj-8",
+      "name": "Projector 8",
+      "zone": "lanes",
+      "legacyOutId": 47,
+      "map": [
+        2645,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.52",
+        "nodeId": "97",
+        "legacyDeviceId": 47
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.107",
+        "port": 23,
+        "legacyDeviceId": 84
+      }
+    },
+    {
+      "id": "proj-9",
+      "name": "Projector 9",
+      "zone": "lanes",
+      "legacyOutId": 44,
+      "map": [
+        2792,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.53",
+        "nodeId": "93",
+        "legacyDeviceId": 44
+      },
+      "display": {
+        "kind": "projector",
+        "protocol": "optoma",
+        "ip": "10.40.60.108",
+        "port": 23,
+        "legacyDeviceId": 85
+      }
+    },
+    {
+      "id": "nemos-7",
+      "name": "Nemos 7",
+      "zone": "nemos",
+      "legacyOutId": 17,
+      "map": [
+        38,
+        246
+      ],
+      "decoder": {
+        "ip": "10.40.60.20",
+        "nodeId": "108",
+        "legacyDeviceId": 17
+      }
+    },
+    {
+      "id": "nemos-8",
+      "name": "Nemos 8",
+      "zone": "nemos",
+      "legacyOutId": 36,
+      "map": [
+        38,
+        339
+      ],
+      "decoder": {
+        "ip": "10.40.60.21",
+        "nodeId": "84",
+        "legacyDeviceId": 36
+      }
+    },
+    {
+      "id": "nemos-9",
+      "name": "Nemos 9",
+      "zone": "nemos",
+      "legacyOutId": 12,
+      "map": [
+        38,
+        432
+      ],
+      "decoder": {
+        "ip": "10.40.60.22",
+        "nodeId": "103",
+        "legacyDeviceId": 12
+      }
+    },
+    {
+      "id": "nemos-10",
+      "name": "Nemos 10",
+      "zone": "nemos",
+      "legacyOutId": 46,
+      "map": [
+        38,
+        525
+      ],
+      "decoder": {
+        "ip": "10.40.60.23",
+        "nodeId": "96",
+        "legacyDeviceId": 46
+      }
+    },
+    {
+      "id": "nemos-11",
+      "name": "Nemos 11",
+      "zone": "nemos",
+      "legacyOutId": 21,
+      "map": [
+        38,
+        618
+      ],
+      "decoder": {
+        "ip": "10.40.60.24",
+        "nodeId": "112",
+        "legacyDeviceId": 21
+      }
+    },
+    {
+      "id": "nemos-12",
+      "name": "Nemos 12",
+      "zone": "nemos",
+      "legacyOutId": 45,
+      "map": [
+        760,
+        46
+      ],
+      "decoder": {
+        "ip": "10.40.60.25",
+        "nodeId": "94",
+        "legacyDeviceId": 45
+      }
+    },
+    {
+      "id": "nemos-13",
+      "name": "Nemos 13",
+      "zone": "nemos",
+      "legacyOutId": 29,
+      "map": [
+        760,
+        132
+      ],
+      "decoder": {
+        "ip": "10.40.60.36",
+        "nodeId": "121",
+        "legacyDeviceId": 29
+      }
+    },
+    {
+      "id": "nemos-14",
+      "name": "Nemos 14",
+      "zone": "nemos",
+      "legacyOutId": 14,
+      "map": [
+        760,
+        218
+      ],
+      "decoder": {
+        "ip": "10.40.60.27",
+        "nodeId": "105",
+        "legacyDeviceId": 14
+      }
+    },
+    {
+      "id": "nemos-15",
+      "name": "Nemos 15",
+      "zone": "nemos",
+      "legacyOutId": 28,
+      "map": [
+        760,
+        304
+      ],
+      "decoder": {
+        "ip": "10.40.60.28",
+        "nodeId": "120",
+        "legacyDeviceId": 28
+      }
+    },
+    {
+      "id": "nemos-16",
+      "name": "Nemos 16",
+      "zone": "nemos",
+      "legacyOutId": 48,
+      "map": [
+        821,
+        390
+      ],
+      "decoder": {
+        "ip": "10.40.60.29",
+        "nodeId": "98",
+        "legacyDeviceId": 48
+      }
+    },
+    {
+      "id": "nemos-17",
+      "name": "Nemos 17",
+      "zone": "nemos",
+      "legacyOutId": 11,
+      "map": [
+        876,
+        476
+      ],
+      "decoder": {
+        "ip": "10.40.60.30",
+        "nodeId": "101",
+        "legacyDeviceId": 11
+      }
+    },
+    {
+      "id": "nemos-18",
+      "name": "Nemos 18",
+      "zone": "nemos",
+      "legacyOutId": 18,
+      "map": [
+        919,
+        562
+      ],
+      "decoder": {
+        "ip": "10.40.60.31",
+        "nodeId": "109",
+        "legacyDeviceId": 18
+      }
+    },
+    {
+      "id": "neoverse-1",
+      "name": "Neoverse 1",
+      "zone": "neoverse",
+      "legacyOutId": 15,
+      "map": [
+        2959,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.54",
+        "nodeId": "106",
+        "legacyDeviceId": 15
+      }
+    },
+    {
+      "id": "neoverse-2",
+      "name": "Neoverse 2",
+      "zone": "neoverse",
+      "legacyOutId": 40,
+      "map": [
+        3107,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.55",
+        "nodeId": "89",
+        "legacyDeviceId": 40
+      }
+    },
+    {
+      "id": "neoverse-3",
+      "name": "Neoverse 3",
+      "zone": "neoverse",
+      "legacyOutId": 35,
+      "map": [
+        3255,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.56",
+        "nodeId": "83",
+        "legacyDeviceId": 35
+      }
+    },
+    {
+      "id": "neoverse-4",
+      "name": "Neoverse 4",
+      "zone": "neoverse",
+      "legacyOutId": 39,
+      "map": [
+        3402,
+        65
+      ],
+      "decoder": {
+        "ip": "10.40.60.57",
+        "nodeId": "88",
+        "legacyDeviceId": 39
+      }
+    },
+    {
+      "id": "patio-1",
+      "name": "Patio 1",
+      "zone": "patio",
+      "legacyOutId": 41,
+      "map": [
+        3624,
+        459
+      ],
+      "decoder": {
+        "ip": "10.40.60.32",
+        "nodeId": "90",
+        "legacyDeviceId": 41
+      }
+    },
+    {
+      "id": "patio-2",
+      "name": "Patio 2",
+      "zone": "patio",
+      "legacyOutId": 24,
+      "map": [
+        3774,
+        459
+      ],
+      "decoder": {
+        "ip": "10.40.60.33",
+        "nodeId": "116",
+        "legacyDeviceId": 24
+      }
+    },
+    {
+      "id": "patio-3",
+      "name": "Patio 3",
+      "zone": "patio",
+      "legacyOutId": 22,
+      "map": [
+        3924,
+        459
+      ],
+      "decoder": {
+        "ip": "10.40.60.34",
+        "nodeId": "113",
+        "legacyDeviceId": 22
+      }
+    },
+    {
+      "id": "patio-4",
+      "name": "Patio 4",
+      "zone": "patio",
+      "legacyOutId": 25,
+      "map": [
+        4074,
+        459
+      ],
+      "decoder": {
+        "ip": "10.40.60.35",
+        "nodeId": "117",
+        "legacyDeviceId": 25
+      }
+    },
+    {
+      "id": "patio-5",
+      "name": "Patio 5",
+      "zone": "patio",
+      "legacyOutId": 16,
+      "map": [
+        4244,
+        459
+      ],
+      "decoder": {
+        "ip": "10.40.60.26",
+        "nodeId": "107",
+        "legacyDeviceId": 16
+      }
+    },
+    {
+      "id": "patio-6",
+      "name": "Patio 6",
+      "zone": "patio",
+      "legacyOutId": 19,
+      "map": [
+        4394,
+        459
+      ],
+      "decoder": {
+        "ip": "10.40.60.37",
+        "nodeId": "110",
+        "legacyDeviceId": 19
+      }
+    },
+    {
+      "id": "patio-8",
+      "name": "Patio 8",
+      "zone": "patio",
+      "legacyOutId": 32,
+      "map": [
+        3774,
+        249
+      ],
+      "decoder": {
+        "ip": "10.40.60.39",
+        "nodeId": "124",
+        "legacyDeviceId": 32
+      }
+    },
+    {
+      "id": "patio-9",
+      "name": "Patio 9",
+      "zone": "patio",
+      "legacyOutId": 38,
+      "map": [
+        4024,
+        249
+      ],
+      "decoder": {
+        "ip": "10.40.60.40",
+        "nodeId": "87",
+        "legacyDeviceId": 38
+      }
+    },
+    {
+      "id": "nemos-1",
+      "name": "Nemos 1",
+      "zone": "videowall",
+      "legacyOutId": 34,
+      "map": [
+        148,
+        74
+      ],
+      "decoder": {
+        "ip": "10.40.60.14",
+        "nodeId": "82",
+        "legacyDeviceId": 34
+      }
+    },
+    {
+      "id": "nemos-2",
+      "name": "Nemos 2",
+      "zone": "videowall",
+      "legacyOutId": 23,
+      "map": [
+        278,
+        74
+      ],
+      "decoder": {
+        "ip": "10.40.60.15",
+        "nodeId": "115",
+        "legacyDeviceId": 23
+      }
+    },
+    {
+      "id": "nemos-3",
+      "name": "Nemos 3",
+      "zone": "videowall",
+      "legacyOutId": 37,
+      "map": [
+        408,
+        74
+      ],
+      "decoder": {
+        "ip": "10.40.60.16",
+        "nodeId": "86",
+        "legacyDeviceId": 37
+      }
+    },
+    {
+      "id": "nemos-4",
+      "name": "Nemos 4",
+      "zone": "videowall",
+      "legacyOutId": 33,
+      "map": [
+        148,
+        154
+      ],
+      "decoder": {
+        "ip": "10.40.60.17",
+        "nodeId": "80",
+        "legacyDeviceId": 33
+      }
+    },
+    {
+      "id": "nemos-5",
+      "name": "Nemos 5",
+      "zone": "videowall",
+      "legacyOutId": 10,
+      "map": [
+        278,
+        154
+      ],
+      "decoder": {
+        "ip": "10.40.60.18",
+        "nodeId": "100",
+        "legacyDeviceId": 10
+      }
+    },
+    {
+      "id": "nemos-6",
+      "name": "Nemos 6",
+      "zone": "videowall",
+      "legacyOutId": 13,
+      "map": [
+        408,
+        154
+      ],
+      "decoder": {
+        "ip": "10.40.60.19",
+        "nodeId": "104",
+        "legacyDeviceId": 13
+      }
+    },
+    {
+      "id": "nemos-19",
+      "name": "Nemos 19",
+      "zone": "videowall2",
+      "legacyOutId": 92,
+      "map": [
+        185,
+        605
+      ],
+      "decoder": {
+        "ip": "10.40.60.61",
+        "nodeId": "125",
+        "legacyDeviceId": 92
+      }
+    },
+    {
+      "id": "nemos-20",
+      "name": "Nemos 20",
+      "zone": "videowall2",
+      "legacyOutId": 91,
+      "map": [
+        315,
+        605
+      ],
+      "decoder": {
+        "ip": "10.40.60.62",
+        "nodeId": "126",
+        "legacyDeviceId": 91
+      }
+    },
+    {
+      "id": "nemos-21",
+      "name": "Nemos 21",
+      "zone": "videowall2",
+      "legacyOutId": 94,
+      "map": [
+        445,
+        605
+      ],
+      "decoder": {
+        "ip": "10.40.60.63",
+        "nodeId": "127",
+        "legacyDeviceId": 94
+      }
+    },
+    {
+      "id": "nemos-22",
+      "name": "Nemos 22",
+      "zone": "videowall2",
+      "legacyOutId": 90,
+      "map": [
+        185,
+        685
+      ],
+      "decoder": {
+        "ip": "10.40.60.64",
+        "nodeId": "128",
+        "legacyDeviceId": 90
+      }
+    },
+    {
+      "id": "nemos-23",
+      "name": "Nemos 23",
+      "zone": "videowall2",
+      "legacyOutId": 93,
+      "map": [
+        315,
+        685
+      ],
+      "decoder": {
+        "ip": "10.40.60.65",
+        "nodeId": "129",
+        "legacyDeviceId": 93
+      }
+    },
+    {
+      "id": "nemos-24",
+      "name": "Nemos 24",
+      "zone": "videowall2",
+      "legacyOutId": 95,
+      "map": [
+        445,
+        685
+      ],
+      "decoder": {
+        "ip": "10.40.60.66",
+        "nodeId": "130",
+        "legacyDeviceId": 95
+      }
+    },
+    {
+      "id": "vip-1",
+      "name": "VIP 1",
+      "zone": "vip",
+      "legacyOutId": 43,
+      "map": [
+        1353,
+        123
+      ],
+      "decoder": {
+        "ip": "10.40.60.41",
+        "nodeId": "92",
+        "legacyDeviceId": 43
+      }
+    },
+    {
+      "id": "vip-2",
+      "name": "VIP 2",
+      "zone": "vip",
+      "legacyOutId": 49,
+      "map": [
+        1353,
+        473
+      ],
+      "decoder": {
+        "ip": "10.40.60.42",
+        "nodeId": "25",
+        "legacyDeviceId": 49
+      }
+    },
+    {
+      "id": "vip-4",
+      "name": "VIP 4",
+      "zone": "vip",
+      "legacyOutId": 76,
+      "map": [
+        1271,
+        597
+      ],
+      "decoder": {
+        "ip": "10.40.60.44",
+        "nodeId": "95",
+        "legacyDeviceId": 76
+      }
+    }
+  ]
 }

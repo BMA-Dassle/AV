@@ -95,6 +95,8 @@ main{flex:1;min-height:0;overflow:auto;padding:16px;padding-bottom:calc(150px + 
 .seg button[aria-pressed="true"]{background:hsl(217 91% 60% / .2);border-color:hsl(217 91% 60% / .5);color:var(--foreground)}
 
 /* ---- floor map: the venue drawing at full page width, TVs at their real positions; the page scrolls, the map never does ---- */
+.panels{display:flex;flex-direction:column;gap:12px}
+.panel .ptl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-foreground);margin:0 0 6px 2px}
 .mapwrap{margin-bottom:6px}
 .zoomctl{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .zoomctl .zname{font-weight:600;font-size:15px;flex:1}
